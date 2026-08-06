@@ -1,0 +1,82 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "lista de casa",
+      "intents": [
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "AdicionarItemIntent",
+          "slots": [
+            {
+              "name": "item",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "adiciona {item}",
+            "adicionar {item}",
+            "coloque {item}",
+            "coloca {item}",
+            "incluir {item}",
+            "inclua {item}",
+            "adiciona {item} na lista",
+            "adicionar {item} na lista",
+            "coloque {item} na lista de compras",
+            "coloca {item} na lista de compras",
+            "inclua {item} na lista"
+          ]
+        },
+        {
+          "name": "RemoverItemIntent",
+          "slots": [
+            {
+              "name": "item",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "remove {item}",
+            "remover {item}",
+            "tira {item}",
+            "tirar {item}",
+            "excluir {item}",
+            "exclui {item}",
+            "remove {item} da lista",
+            "remover {item} da lista",
+            "tira {item} da lista de compras",
+            "tirar {item} da lista"
+          ]
+        },
+        {
+          "name": "ListarItensIntent",
+          "slots": [],
+          "samples": [
+            "o que tem na lista",
+            "o que falta comprar",
+            "quais são os itens da lista",
+            "quais itens estão na lista",
+            "listar itens",
+            "quais itens temos na lista de compras",
+            "me diga os itens da lista"
+          ]
+        }
+      ],
+      "types": []
+    }
+  }
+}

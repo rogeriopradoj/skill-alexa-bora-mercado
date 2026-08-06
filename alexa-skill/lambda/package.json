@@ -1,0 +1,13 @@
+{
+  "name": "skill-alexa-lista-de-casa-lambda",
+  "version": "1.0.0",
+  "description": "Lambda backend para a Alexa Skill Lista de Casa integrada ao Google Sheets",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "ask-sdk-core": "^2.14.0",
+    "ask-sdk-model": "^1.42.0"
+  }
+}

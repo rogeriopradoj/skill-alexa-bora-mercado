@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "publishingInformation": {
+      "locales": {
+        "pt-BR": {
+          "summary": "Lista de compras compartilhada em família sincronizada no Google Sheets.",
+          "examplePhrases": [
+            "Alexa, abra a lista de casa",
+            "Alexa, peça para a lista de casa adicionar leite",
+            "Alexa, pergunte para a lista de casa o que tem na lista"
+          ],
+          "name": "Lista de Casa",
+          "description": "Skill personalizada para compartilhar e gerenciar uma lista de compras entre diferentes contas da Alexa usando uma planilha compartilhada do Google."
+        }
+      },
+      "isAvailableWorldwide": true,
+      "testingInstructions": "Skill de uso pessoal para gerenciar lista de compras.",
+      "category": "ORGANIZERS_AND_ASSISTANTS",
+      "distributionCountries": []
+    },
+    "apis": {
+      "custom": {
+        "endpoint": {
+          "sourceDir": "lambda"
+        }
+      }
+    },
+    "manifestVersion": "1.0"
+  }
+}

@@ -44,16 +44,16 @@ function callScript(action, item = '') {
     });
 }
 
-// 1. LaunchRequest Handler (Quando você diz: "Alexa, abra a lista de casa")
+// 1. LaunchRequest Handler (Quando você diz: "Alexa, abra a relação mercado")
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
-        const speakOutput = 'Bem-vindo à Lista de Casa! Você pode pedir para adicionar um item, remover um item ou listar o que falta comprar.';
+        const speakOutput = 'Bem-vindo à Relação Mercado! Você pode pedir para adicionar um item, remover um item ou consultar o que falta.';
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt('O que deseja fazer na sua lista de compras?')
+            .reprompt('O que deseja fazer na relação?')
             .getResponse();
     }
 };
@@ -69,14 +69,14 @@ const AdicionarItemIntentHandler = {
 
         if (!item) {
             return handlerInput.responseBuilder
-                .speak('Não consegui entender qual item você deseja adicionar. Pode repetir?')
-                .reprompt('Qual item você quer adicionar à lista?')
+                .speak('Não entendi qual item você deseja adicionar. Pode repetir?')
+                .reprompt('Qual item quer adicionar?')
                 .getResponse();
         }
 
         try {
             await callScript('add', item);
-            const speakOutput = `${item} foi adicionado à lista de casa.`;
+            const speakOutput = `${item} foi adicionado à relação.`;
             return handlerInput.responseBuilder
                 .speak(speakOutput)
                 .reprompt('Quer adicionar mais algum item?')
@@ -110,9 +110,9 @@ const RemoverItemIntentHandler = {
             const res = await callScript('remove', item);
             let speakOutput = '';
             if (res.success) {
-                speakOutput = `${item} foi removido da lista de casa.`;
+                speakOutput = `${item} foi removido da relação.`;
             } else {
-                speakOutput = `Não encontrei o item ${item} na sua lista de compras.`;
+                speakOutput = `Não encontrei o item ${item} na relação.`;
             }
 
             return handlerInput.responseBuilder
@@ -141,9 +141,9 @@ const ListarItensIntentHandler = {
 
             if (res.items && res.items.length > 0) {
                 const listaFormatada = res.items.join(', ');
-                speakOutput = `A sua lista de casa tem ${res.items.length} ${res.items.length === 1 ? 'item' : 'itens'}: ${listaFormatada}.`;
+                speakOutput = `A sua relação mercado tem ${res.items.length} ${res.items.length === 1 ? 'item' : 'itens'}: ${listaFormatada}.`;
             } else {
-                speakOutput = 'A sua lista de compras está vazia no momento.';
+                speakOutput = 'A sua relação mercado está vazia no momento.';
             }
 
             return handlerInput.responseBuilder
@@ -152,7 +152,7 @@ const ListarItensIntentHandler = {
         } catch (error) {
             console.error('Erro no ListarItensIntent:', error);
             return handlerInput.responseBuilder
-                .speak('Desculpe, não consegui consultar a lista no Google Sheets no momento.')
+                .speak('Desculpe, não consegui consultar a relação no Google Sheets no momento.')
                 .getResponse();
         }
     }
@@ -165,7 +165,7 @@ const HelpIntentHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.HelpIntent';
     },
     handle(handlerInput) {
-        const speakOutput = 'Você pode me pedir para adicionar leite na lista, perguntar o que tem na lista ou remover um item. Como posso ajudar?';
+        const speakOutput = 'Você pode me pedir para adicionar leite na relação, perguntar o que tem na relação ou remover um item. Como posso ajudar?';
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(speakOutput)
@@ -195,10 +195,10 @@ const FallbackIntentHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.FallbackIntent';
     },
     handle(handlerInput) {
-        const speakOutput = 'Desculpe, não entendi esse comando. Tente pedir para adicionar um item ou consultar a lista de compras.';
+        const speakOutput = 'Desculpe, não entendi esse comando. Tente pedir para adicionar um item ou consultar a relação mercado.';
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt('Como posso ajudar com a sua lista?')
+            .reprompt('Como posso ajudar com a relação?')
             .getResponse();
     }
 };

@@ -3,18 +3,18 @@
     "publishingInformation": {
       "locales": {
         "pt-BR": {
-          "summary": "Lista de compras compartilhada em família sincronizada no Google Sheets.",
+          "summary": "Relação de mercado compartilhada em família sincronizada no Google Sheets.",
           "examplePhrases": [
-            "Alexa, abra a lista de casa",
-            "Alexa, peça para a lista de casa adicionar leite",
-            "Alexa, pergunte para a lista de casa o que tem na lista"
+            "Alexa, abra a relação mercado",
+            "Alexa, peça para a relação mercado adicionar leite",
+            "Alexa, pergunte para a relação mercado o que tem"
           ],
-          "name": "Lista de Casa",
-          "description": "Skill personalizada para compartilhar e gerenciar uma lista de compras entre diferentes contas da Alexa usando uma planilha compartilhada do Google."
+          "name": "Relação Mercado",
+          "description": "Skill personalizada para compartilhar e gerenciar uma relação de itens de mercado entre diferentes contas da Alexa usando uma planilha compartilhada do Google."
         }
       },
       "isAvailableWorldwide": true,
-      "testingInstructions": "Skill de uso pessoal para gerenciar lista de compras.",
+      "testingInstructions": "Skill de uso pessoal para gerenciar relação de mercado.",
       "category": "ORGANIZERS_AND_ASSISTANTS",
       "distributionCountries": []
     },

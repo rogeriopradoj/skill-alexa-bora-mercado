@@ -1,7 +1,7 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "lista de casa",
+      "invocationName": "relação mercado",
       "intents": [
         {
           "name": "AMAZON.CancelIntent",
@@ -34,11 +34,10 @@
             "coloca {item}",
             "incluir {item}",
             "inclua {item}",
-            "adiciona {item} na lista",
-            "adicionar {item} na lista",
-            "coloque {item} na lista de compras",
-            "coloca {item} na lista de compras",
-            "inclua {item} na lista"
+            "adiciona {item} na relação",
+            "adicionar {item} na relação",
+            "coloca {item} na relação",
+            "inclua {item} na relação"
           ]
         },
         {
@@ -56,23 +55,22 @@
             "tirar {item}",
             "excluir {item}",
             "exclui {item}",
-            "remove {item} da lista",
-            "remover {item} da lista",
-            "tira {item} da lista de compras",
-            "tirar {item} da lista"
+            "remove {item} da relação",
+            "remover {item} da relação",
+            "tira {item} da relação"
           ]
         },
         {
           "name": "ListarItensIntent",
           "slots": [],
           "samples": [
-            "o que tem na lista",
-            "o que falta comprar",
-            "quais são os itens da lista",
-            "quais itens estão na lista",
+            "o que tem na relação",
+            "o que falta",
+            "quais são os itens da relação",
+            "quais itens estão na relação",
             "listar itens",
-            "quais itens temos na lista de compras",
-            "me diga os itens da lista"
+            "quais itens temos",
+            "me diga os itens"
           ]
         }
       ],

@@ -1,11 +1,10 @@
 /**
- * Google Apps Script - API REST para a Skill Alexa "Bora Mercado"
+ * Google Apps Script - API REST para a Skill Alexa "Bora Mercado" (com Governança)
  * Planilha do Google: "Bora Mercado"
  * 
- * Configuração de Implantação:
- * - Tipo: App da Web (Web App)
- * - Executar como: Eu
- * - Quem tem acesso: Qualquer pessoa (Anyone)
+ * Abas Criadas Automaticamente:
+ * 1. "Itens": [Item, Data Inclusão, Quem Incluiu, User ID Alexa]
+ * 2. "Historico_Removidos": [Item, Data Remoção, Quem Apagou, Data Inclusão, Quem Incluiu]
  */
 
 function doGet(e) {
@@ -13,21 +12,40 @@ function doGet(e) {
     var params = e.parameter || {};
     var action = (params.action || 'list').toLowerCase();
     var item = params.item ? params.item.trim() : '';
+    var user = params.user ? params.user.trim() : 'Desconhecido';
+    var userId = params.userId ? params.userId.trim() : '';
     
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheetItens = getOrCreateSheet(ss, 'Itens');
+    var sheetRemovidos = getOrCreateSheet(ss, 'Historico_Removidos');
 
     if (action === 'list') {
-      return handleList(sheet);
+      return handleList(sheetItens);
     } else if (action === 'add') {
-      return handleAdd(sheet, item);
+      return handleAdd(sheetItens, item, user, userId);
     } else if (action === 'remove') {
-      return handleRemove(sheet, item);
+      return handleRemove(sheetItens, sheetRemovidos, item, user, userId);
     } else {
       return responseJSON({ success: false, message: 'Ação inválida. Use: list, add ou remove.' });
     }
   } catch (error) {
     return responseJSON({ success: false, error: error.toString() });
   }
+}
+
+function getOrCreateSheet(ss, sheetName) {
+  var sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+    if (sheetName === 'Itens') {
+      sheet.appendRow(['Item', 'Data Inclusão', 'Quem Incluiu', 'User ID Alexa']);
+      sheet.getRange("1:1").setFontWeight("bold");
+    } else if (sheetName === 'Historico_Removidos') {
+      sheet.appendRow(['Item', 'Data Remoção', 'Quem Apagou', 'Data Inclusão', 'Quem Incluiu']);
+      sheet.getRange("1:1").setFontWeight("bold");
+    }
+  }
+  return sheet;
 }
 
 function handleList(sheet) {
@@ -49,35 +67,50 @@ function handleList(sheet) {
   });
 }
 
-function handleAdd(sheet, item) {
+function handleAdd(sheet, item, user, userId) {
   if (!item) {
     return responseJSON({ success: false, message: 'Nenhum item informado para adicionar.' });
   }
   
-  sheet.appendRow([item, new Date()]);
+  var now = new Date();
+  var formattedDate = Utilities.formatDate(now, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm:ss");
+  
+  sheet.appendRow([item, formattedDate, user, userId]);
   return responseJSON({
     success: true,
-    message: 'Item "' + item + '" anotado com sucesso.',
-    item: item
+    message: 'Item "' + item + '" anotado por ' + user + '.',
+    item: item,
+    user: user
   });
 }
 
-function handleRemove(sheet, item) {
+function handleRemove(sheetItens, sheetRemovidos, item, user, userId) {
   if (!item) {
     return responseJSON({ success: false, message: 'Nenhum item informado para remover.' });
   }
   
-  var data = sheet.getDataRange().getValues();
+  var data = sheetItens.getDataRange().getValues();
   var targetItem = item.toLowerCase();
+  var now = new Date();
+  var formattedDate = Utilities.formatDate(now, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm:ss");
   
   for (var i = data.length - 1; i >= 1; i--) {
     var rowValue = data[i][0] ? data[i][0].toString().trim().toLowerCase() : '';
     if (rowValue === targetItem) {
-      sheet.deleteRow(i + 1); // 1-indexed no Sheets
+      var dataInclusao = data[i][1] || 'N/I';
+      var quemIncluiu = data[i][2] || 'N/I';
+      
+      // Registra o apagamento na aba de Histórico
+      sheetRemovidos.appendRow([data[i][0], formattedDate, user, dataInclusao, quemIncluiu]);
+      
+      // Deleta o item da aba de itens ativos
+      sheetItens.deleteRow(i + 1);
+      
       return responseJSON({
         success: true,
-        message: 'Item "' + item + '" riscado com sucesso.',
-        item: item
+        message: 'Item "' + item + '" riscado por ' + user + '.',
+        item: item,
+        user: user
       });
     }
   }

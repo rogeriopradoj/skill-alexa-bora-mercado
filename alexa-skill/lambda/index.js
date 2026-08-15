@@ -7,20 +7,49 @@ const https = require('https');
 // ======================================================================================
 const GOOGLE_SCRIPT_URL = 'COLE_AQUI_A_SUA_URL_DO_GOOGLE_APPS_SCRIPT';
 
+// ======================================================================================
+// MAPEAMENTO DE NOMES AMIGÁVEIS (GOVERNANÇA)
+// Para descobrir o seu userId da Alexa, faça um teste na skill.
+// O User ID será gravado na planilha do Google Sheets, depois você pode colar aqui!
+// Exemplo:
+// const USER_MAP = {
+//    'amzn1.ask.account.AG123...': 'Rogério',
+//    'amzn1.ask.account.AG456...': 'Esposa'
+// };
+// ======================================================================================
+const USER_MAP = {};
+
+/**
+ * Utilitário para extrair as informações de identificação do Usuário da Alexa.
+ */
+function getUserInfo(handlerInput) {
+    const userId = handlerInput.requestEnvelope?.session?.user?.userId 
+                || handlerInput.requestEnvelope?.context?.System?.user?.userId 
+                || '';
+
+    const mappedName = USER_MAP[userId];
+    if (mappedName) {
+        return { user: mappedName, userId: userId };
+    }
+
+    // Se ainda não foi mapeado, utiliza os últimos 6 caracteres do ID para identificar na planilha
+    const shortId = userId ? userId.slice(-6) : 'Desconhecido';
+    return { user: `User_${shortId}`, userId: userId };
+}
+
 /**
  * Função utilitária para fazer chamadas HTTP GET ao Google Apps Script.
- * Trata automaticamente o redirecionamento HTTP 302 que o Apps Script utiliza.
+ * Trata automaticamente o redirecionamento HTTP 302 do Apps Script.
  */
-function callScript(action, item = '') {
+function callScript(action, item = '', user = '', userId = '') {
     return new Promise((resolve, reject) => {
         let url = `${GOOGLE_SCRIPT_URL}?action=${action}`;
-        if (item) {
-            url += `&item=${encodeURIComponent(item)}`;
-        }
+        if (item) url += `&item=${encodeURIComponent(item)}`;
+        if (user) url += `&user=${encodeURIComponent(user)}`;
+        if (userId) url += `&userId=${encodeURIComponent(userId)}`;
 
         const fetchUrl = (targetUrl) => {
             https.get(targetUrl, (res) => {
-                // Redirecionamento nativo do Google Apps Script
                 if (res.statusCode === 301 || res.statusCode === 302) {
                     if (res.headers.location) {
                         return fetchUrl(res.headers.location);
@@ -44,13 +73,14 @@ function callScript(action, item = '') {
     });
 }
 
-// 1. LaunchRequest Handler (Quando você diz: "Alexa, abra o bora mercado")
+// 1. LaunchRequest Handler
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
-        const speakOutput = 'Bora mercado! Você pode pedir para anotar um item, riscar um item ou perguntar o que falta.';
+        const { user } = getUserInfo(handlerInput);
+        const speakOutput = `Bora mercado, ${user}! Você pode pedir para anotar um item, riscar um item ou perguntar o que falta.`;
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt('O que quer anotar ou consultar?')
@@ -66,6 +96,7 @@ const AdicionarItemIntentHandler = {
     },
     async handle(handlerInput) {
         const item = Alexa.getSlotValue(handlerInput.requestEnvelope, 'item');
+        const { user, userId } = getUserInfo(handlerInput);
 
         if (!item) {
             return handlerInput.responseBuilder
@@ -75,7 +106,7 @@ const AdicionarItemIntentHandler = {
         }
 
         try {
-            await callScript('add', item);
+            await callScript('add', item, user, userId);
             const speakOutput = `Anotado ${item}!`;
             return handlerInput.responseBuilder
                 .speak(speakOutput)
@@ -84,7 +115,7 @@ const AdicionarItemIntentHandler = {
         } catch (error) {
             console.error('Erro no AdicionarItemIntent:', error);
             return handlerInput.responseBuilder
-                .speak(`Tive um problema ao conectar com a planilha para anotar ${item}. Tente novamente em instantes.`)
+                .speak(`Tive um problema ao conectar com a planilha para anotar ${item}.`)
                 .getResponse();
         }
     }
@@ -98,6 +129,7 @@ const RemoverItemIntentHandler = {
     },
     async handle(handlerInput) {
         const item = Alexa.getSlotValue(handlerInput.requestEnvelope, 'item');
+        const { user, userId } = getUserInfo(handlerInput);
 
         if (!item) {
             return handlerInput.responseBuilder
@@ -107,7 +139,7 @@ const RemoverItemIntentHandler = {
         }
 
         try {
-            const res = await callScript('remove', item);
+            const res = await callScript('remove', item, user, userId);
             let speakOutput = '';
             if (res.success) {
                 speakOutput = `Riscado ${item}.`;

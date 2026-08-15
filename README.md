@@ -1,6 +1,19 @@
-# 🛒 skill-alexa-bora-mercado (com Governança e Auditoria)
+# 🛒 skill-alexa-bora-mercado (Suporte Multilíngue: pt-BR e en-US)
 
-Skill customizada para a Amazon Alexa integrada a uma planilha do **Google Sheets** chamada **`Bora Mercado`** via **Google Apps Script**. Permite gerenciar e auditar com precisão a lista de compras familiar.
+Skill customizada para a Amazon Alexa integrada a uma planilha do **Google Sheets** chamada **`Bora Mercado`** via **Google Apps Script**. Permite gerenciar e auditar a lista de compras familiar, suportando dispositivos configurados em **Português (Brasil)** e **Inglês (US)**.
+
+---
+
+## 🌎 Suporte Multilíngue (Como ativar o Inglês / en-US)
+
+Se a sua Alexa ou a da sua esposa estiver configurada em **Inglês (US)** ou em modo bilíngue:
+
+1. No **Alexa Developer Console**, no topo da página (ao lado do nome da Skill), clique no seletor de idioma onde diz `Portuguese (BR)`.
+2. Clique em **Language Settings** (ou **Add Locale**).
+3. Adicione o idioma **`English (US)`**.
+4. No menu da esquerda, mude o seletor para `English (US)` > **Interaction Model** > **JSON Editor**.
+5. Cole o conteúdo do arquivo [`alexa-skill/interactionModels/custom/en-US.json`](./alexa-skill/interactionModels/custom/en-US.json).
+6. Clique em **Save Model** e em seguida **Build Model**.
 
 ---
 
@@ -8,37 +21,8 @@ Skill customizada para a Amazon Alexa integrada a uma planilha do **Google Sheet
 
 O Google Apps Script gerencia automaticamente **duas abas** na sua planilha:
 
-### Aba 1: `Itens` (Itens Ativos)
-Registra todos os itens atualmente pendentes para compra.
-- **Item**: Nome do produto (ex: *Leite*).
-- **Data Inclusão**: Data e hora exatas da inclusão (`dd/mm/yyyy hh:mm:ss`).
-- **Quem Incluiu**: Nome do usuário ou ID da conta Alexa (ex: *Rogério* ou *Esposa*).
-- **User ID Alexa**: Identificador único da conta Amazon/Alexa.
-
-### Aba 2: `Historico_Removidos` (Auditoria de Apagamentos)
-Trilha de auditoria para onde os itens resolvidos/apagados são movidos automaticamente ao serem riscados.
-- **Item**: Nome do produto removido.
-- **Data Remoção**: Data e hora exatas em que o item foi riscado.
-- **Quem Apagou**: Usuário/Conta que solicitou a remoção.
-- **Data Inclusão**: Data original em que o item tinha sido inserido.
-- **Quem Incluiu**: Usuário original que havia adicionado o item.
-
----
-
-## 👥 Como Mapear os Nomes ("Rogério" e "Esposa")
-
-No arquivo `alexa-skill/lambda/index.js`, existe o objeto `USER_MAP`:
-
-```javascript
-const USER_MAP = {
-   'amzn1.ask.account.AG123...': 'Rogério',
-   'amzn1.ask.account.AG456...': 'Esposa'
-};
-```
-
-1. Quando você ou sua esposa usarem a Skill pela primeira vez, o código gravará o `User ID` completo na Coluna D da aba `Itens`.
-2. Basta copiar o `User ID` da sua conta e da conta dela da planilha e colar no `USER_MAP` no `index.js`.
-3. A partir disso, a planilha mostrará os nomes amigáveis (**Rogério** e **Esposa**) nas colunas de governança!
+- **`Itens`**: [Item, Data Inclusão, Quem Incluiu, User ID Alexa]
+- **`Historico_Removidos`**: [Item, Data Remoção, Quem Apagou, Data Inclusão, Quem Incluiu]
 
 ---
 
@@ -46,19 +30,20 @@ const USER_MAP = {
 
 ```text
 skill-alexa-bora-mercado/
-├── README.md                           # Este guia de governança e configuração
+├── README.md
 ├── .gitignore
 ├── assets/
 │   ├── icon_108.png
 │   └── icon_512.png
 ├── google-apps-script/
-│   └── Code.gs                         # Backend Apps Script (com suporte a abas e auditoria)
+│   └── Code.gs
 └── alexa-skill/
     ├── skill.json
     ├── interactionModels/
     │   └── custom/
-    │       └── pt-BR.json
+    │       ├── pt-BR.json              # Modelo em Português
+    │       └── en-US.json              # Modelo em Inglês
     └── lambda/
-        ├── index.js                    # Lambda Handler com extração de User ID Alexa
+        ├── index.js
         └── package.json
 ```

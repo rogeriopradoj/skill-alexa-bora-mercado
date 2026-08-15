@@ -5,7 +5,7 @@ const https = require('https');
 // CONFIGURE AQUI A URL DO SEU GOOGLE APPS SCRIPT
 // Exemplo: 'https://script.google.com/macros/s/AKfycb.../exec'
 // ======================================================================================
-const GOOGLE_SCRIPT_URL = 'COLE_AQUI_A_SUA_URL_DO_GOOGLE_APPS_SCRIPT';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyPVvtKt5tjzyCDzWNHQhfUjQNInnfCqpXbepZOjnb8S4is5O15MzxUX5q4b_HbiUCv/exec';
 
 // ======================================================================================
 // MAPEAMENTO DE NOMES AMIGÁVEIS (GOVERNANÇA)

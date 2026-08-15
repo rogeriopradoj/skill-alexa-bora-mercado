@@ -44,16 +44,16 @@ function callScript(action, item = '') {
     });
 }
 
-// 1. LaunchRequest Handler (Quando você diz: "Alexa, abra a relação mercado")
+// 1. LaunchRequest Handler (Quando você diz: "Alexa, abra o bora pro mercado")
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
-        const speakOutput = 'Bem-vindo à Relação Mercado! Você pode pedir para adicionar um item, remover um item ou consultar o que falta.';
+        const speakOutput = 'Bora pro mercado! Você pode pedir para anotar um item, riscar um item ou perguntar o que falta.';
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt('O que deseja fazer na relação?')
+            .reprompt('O que quer anotar ou consultar?')
             .getResponse();
     }
 };
@@ -69,22 +69,22 @@ const AdicionarItemIntentHandler = {
 
         if (!item) {
             return handlerInput.responseBuilder
-                .speak('Não entendi qual item você deseja adicionar. Pode repetir?')
-                .reprompt('Qual item quer adicionar?')
+                .speak('Não entendi qual item você quer anotar. Pode repetir?')
+                .reprompt('Qual item você quer anotar?')
                 .getResponse();
         }
 
         try {
             await callScript('add', item);
-            const speakOutput = `${item} foi adicionado à relação.`;
+            const speakOutput = `Anotado ${item}!`;
             return handlerInput.responseBuilder
                 .speak(speakOutput)
-                .reprompt('Quer adicionar mais algum item?')
+                .reprompt('Quer anotar mais alguma coisa?')
                 .getResponse();
         } catch (error) {
             console.error('Erro no AdicionarItemIntent:', error);
             return handlerInput.responseBuilder
-                .speak(`Tive um problema ao conectar com a planilha para adicionar ${item}. Tente novamente em instantes.`)
+                .speak(`Tive um problema ao conectar com a planilha para anotar ${item}. Tente novamente em instantes.`)
                 .getResponse();
         }
     }
@@ -101,8 +101,8 @@ const RemoverItemIntentHandler = {
 
         if (!item) {
             return handlerInput.responseBuilder
-                .speak('Não entendi qual item você quer remover. Pode me dizer o nome do item?')
-                .reprompt('Qual item deseja remover?')
+                .speak('Não entendi qual item você quer riscar. Pode me dizer o nome do item?')
+                .reprompt('Qual item quer riscar?')
                 .getResponse();
         }
 
@@ -110,19 +110,19 @@ const RemoverItemIntentHandler = {
             const res = await callScript('remove', item);
             let speakOutput = '';
             if (res.success) {
-                speakOutput = `${item} foi removido da relação.`;
+                speakOutput = `Riscado ${item}.`;
             } else {
-                speakOutput = `Não encontrei o item ${item} na relação.`;
+                speakOutput = `Não encontrei ${item} para riscar.`;
             }
 
             return handlerInput.responseBuilder
                 .speak(speakOutput)
-                .reprompt('Deseja alterar mais alguma coisa?')
+                .reprompt('Quer alterar mais alguma coisa?')
                 .getResponse();
         } catch (error) {
             console.error('Erro no RemoverItemIntent:', error);
             return handlerInput.responseBuilder
-                .speak(`Tive um problema ao comunicar com a planilha ao tentar remover ${item}.`)
+                .speak(`Tive um problema ao comunicar com a planilha ao tentar riscar ${item}.`)
                 .getResponse();
         }
     }
@@ -141,9 +141,9 @@ const ListarItensIntentHandler = {
 
             if (res.items && res.items.length > 0) {
                 const listaFormatada = res.items.join(', ');
-                speakOutput = `A sua relação mercado tem ${res.items.length} ${res.items.length === 1 ? 'item' : 'itens'}: ${listaFormatada}.`;
+                speakOutput = `Tá faltando: ${listaFormatada}.`;
             } else {
-                speakOutput = 'A sua relação mercado está vazia no momento.';
+                speakOutput = 'Não tá faltando nada, a lista tá vazia!';
             }
 
             return handlerInput.responseBuilder
@@ -152,7 +152,7 @@ const ListarItensIntentHandler = {
         } catch (error) {
             console.error('Erro no ListarItensIntent:', error);
             return handlerInput.responseBuilder
-                .speak('Desculpe, não consegui consultar a relação no Google Sheets no momento.')
+                .speak('Desculpe, não consegui consultar o Google Sheets no momento.')
                 .getResponse();
         }
     }
@@ -165,7 +165,7 @@ const HelpIntentHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.HelpIntent';
     },
     handle(handlerInput) {
-        const speakOutput = 'Você pode me pedir para adicionar leite na relação, perguntar o que tem na relação ou remover um item. Como posso ajudar?';
+        const speakOutput = 'Você pode dizer "anota leite", "risca pão" ou "o que falta". Como posso ajudar?';
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(speakOutput)
@@ -181,7 +181,7 @@ const CancelAndStopIntentHandler = {
                 || Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.StopIntent');
     },
     handle(handlerInput) {
-        const speakOutput = 'Até logo!';
+        const speakOutput = 'Até mais!';
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .getResponse();
@@ -195,10 +195,10 @@ const FallbackIntentHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.FallbackIntent';
     },
     handle(handlerInput) {
-        const speakOutput = 'Desculpe, não entendi esse comando. Tente pedir para adicionar um item ou consultar a relação mercado.';
+        const speakOutput = 'Desculpe, não entendi. Você pode dizer "anota leite" ou perguntar "o que falta".';
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt('Como posso ajudar com a relação?')
+            .reprompt('Como posso ajudar?')
             .getResponse();
     }
 };

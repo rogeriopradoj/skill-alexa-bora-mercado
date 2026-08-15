@@ -1,6 +1,6 @@
-# 🛒 skill-alexa-lista-de-casa (Relação Mercado)
+# 🛒 skill-alexa-lista-de-casa (Bora pro Mercado)
 
-Skill customizada para a Amazon Alexa integrada a uma planilha do **Google Sheets** via **Google Apps Script**. Permite que contas da Alexa em perfis Amazon diferentes (ex: você e sua esposa no Brasil) compartilhem e gerenciem a mesma lista/relação de compras usando o nome de invocação **`relação mercado`**.
+Skill customizada para a Amazon Alexa integrada a uma planilha do **Google Sheets** via **Google Apps Script**. Permite que você e sua esposa compartilhem a mesma lista de mercado usando o nome de invocação **`bora pro mercado`** com comandos super naturais.
 
 ---
 
@@ -9,46 +9,48 @@ Skill customizada para a Amazon Alexa integrada a uma planilha do **Google Sheet
 ```text
 [ Echo da Esposa ]  \
                      --> [ Alexa Custom Skill ] --> [ Google Apps Script ] --> [ Google Sheets ]
-[ Sua Echo ]        /    (Invocation: relação mercado) (API REST WebApp)   (Planilha Compartilhada)
+[ Sua Echo ]        /    (Invocation: bora pro mercado) (API REST WebApp)   (Planilha Compartilhada)
 ```
+
+---
+
+## 🗣️ Comandos de Voz Super Naturais (Nome de Invocação: `bora pro mercado`)
+
+Evitamos os termos gravados *"lista"*, *"compras"* e *"adicionar item"* que acionavam a lista nativa da Amazon. Agora você usa verbos curtos do dia a dia:
+
+### Para Anotar (Adicionar):
+- *"Alexa, peça pro **bora pro mercado** anotar leite."*
+- *"Alexa, peça pro **bora pro mercado** botar pão."*
+- *"Alexa, fala pro **bora pro mercado** colocar café."*
+- *"Alexa, pede pro **bora pro mercado** incluir detergente."*
+
+### Para Consultar:
+- *"Alexa, pergunte pro **bora pro mercado** o que falta."*
+- *"Alexa, pergunte pro **bora pro mercado** o que precisamos."*
+- *"Alexa, pede pro **bora pro mercado** ver o que tem para comprar."*
+
+### Para Riscar (Remover):
+- *"Alexa, peça pro **bora pro mercado** riscar o leite."*
+- *"Alexa, fala pro **bora pro mercado** tirar o pão."*
+- *"Alexa, peça pro **bora pro mercado** apagar o café."*
 
 ---
 
 ## 🚀 Passo a Passo de Atualização no Console da Alexa
 
-Como alteramos o nome de invocação para **`relação mercado`**:
-
 1. No [Alexa Developer Console](https://developer.amazon.com/alexa/console/ask), acesse sua Skill.
-2. Vá em **Interaction Model** > **JSON Editor**:
+2. Em **Interaction Model** > **JSON Editor**:
    - Copie o conteúdo do arquivo [`alexa-skill/interactionModels/custom/pt-BR.json`](./alexa-skill/interactionModels/custom/pt-BR.json).
-   - Cole no editor e clique em **Save Model** e em seguida **Build Model**.
-3. Vá na aba **Code**:
-   - Atualize o arquivo `index.js` com o conteúdo de [`alexa-skill/lambda/index.js`](./alexa-skill/lambda/index.js) (lembre-se de manter sua URL do Google Apps Script na constante `GOOGLE_SCRIPT_URL`).
+   - Cole no editor e clique em **Save Model** e **Build Model**.
+3. Na aba **Code**:
+   - Copie o conteúdo do arquivo [`alexa-skill/lambda/index.js`](./alexa-skill/lambda/index.js) (lembre-se de manter sua URL do Apps Script na constante `GOOGLE_SCRIPT_URL`).
    - Clique em **Save** e **Deploy**.
 
 ---
 
-## 🗣️ Como Usar no Dia a Dia (Nome de Invocação: `relação mercado`)
+## 💡 Dica de Ouro: Atalhos com Rotinas da Alexa
 
-Usamos **"relação mercado"** para evitar que a Alexa confunda com as palavras reservadas *"lista"* e *"compras"* do sistema nativo da Amazon.
-
-### Comandos em Etapa Única (One-Shot):
-- *"Alexa, peça para a **relação mercado** adicionar leite."*
-- *"Alexa, mande a **relação mercado** incluir café."*
-- *"Alexa, pergunte para a **relação mercado** o que tem."*
-- *"Alexa, peça para a **relação mercado** remover o queijo."*
-
-### Modo Conversação:
-1. Você diz: *"Alexa, abra a **relação mercado**."*
-2. Alexa: *"Bem-vindo à Relação Mercado! O que deseja fazer?"*
-3. Você: *"Adiciona banana."*
-4. Alexa: *"Banana foi adicionado à relação. Quer adicionar mais algum item?"*
-
----
-
-## 💡 Dica: Atalhos com Rotinas da Alexa
-
-Para falar frases ainda menores (ex: *"Alexa, o que falta?"*):
+Se você quiser falar frases ainda menores (ex: *"Alexa, anota leite"*):
 1. Abra o app da Alexa no celular (**Mais** > **Rotinas** > **+**).
-2. **Quando:** Você diz: *"Alexa, o que falta?"*
-3. **Ação:** Personalizado -> *"Alexa, pergunte para a relação mercado o que tem"*.
+2. **Quando:** Você diz: *"Alexa, anota leite"*
+3. **Ação:** Personalizado -> *"Alexa, peça pro bora pro mercado anotar leite"*.

@@ -1,7 +1,7 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "relação mercado",
+      "invocationName": "bora pro mercado",
       "intents": [
         {
           "name": "AMAZON.CancelIntent",
@@ -28,16 +28,18 @@
             }
           ],
           "samples": [
-            "adiciona {item}",
-            "adicionar {item}",
-            "coloque {item}",
+            "anota {item}",
+            "anotar {item}",
+            "bota {item}",
+            "botar {item}",
             "coloca {item}",
+            "colocar {item}",
+            "inclui {item}",
             "incluir {item}",
-            "inclua {item}",
-            "adiciona {item} na relação",
-            "adicionar {item} na relação",
-            "coloca {item} na relação",
-            "inclua {item} na relação"
+            "marca {item}",
+            "marcar {item}",
+            "adiciona {item}",
+            "adicionar {item}"
           ]
         },
         {
@@ -49,28 +51,30 @@
             }
           ],
           "samples": [
-            "remove {item}",
-            "remover {item}",
+            "risca {item}",
+            "riscar {item}",
             "tira {item}",
             "tirar {item}",
-            "excluir {item}",
-            "exclui {item}",
-            "remove {item} da relação",
-            "remover {item} da relação",
-            "tira {item} da relação"
+            "apaga {item}",
+            "apagar {item}",
+            "já comprei {item}",
+            "comprei {item}",
+            "remove {item}",
+            "remover {item}"
           ]
         },
         {
           "name": "ListarItensIntent",
           "slots": [],
           "samples": [
-            "o que tem na relação",
             "o que falta",
-            "quais são os itens da relação",
-            "quais itens estão na relação",
-            "listar itens",
-            "quais itens temos",
-            "me diga os itens"
+            "o que precisamos",
+            "o que tem para comprar",
+            "o que falta comprar",
+            "o que tem registrado",
+            "quais são os itens",
+            "quais os itens",
+            "listar tudo"
           ]
         }
       ],

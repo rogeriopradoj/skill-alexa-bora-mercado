@@ -3,18 +3,18 @@
     "publishingInformation": {
       "locales": {
         "pt-BR": {
-          "summary": "Relação de mercado compartilhada em família sincronizada no Google Sheets.",
+          "summary": "Lista de mercado compartilhada em família sincronizada no Google Sheets.",
           "examplePhrases": [
-            "Alexa, abra a relação mercado",
-            "Alexa, peça para a relação mercado adicionar leite",
-            "Alexa, pergunte para a relação mercado o que tem"
+            "Alexa, abra o bora pro mercado",
+            "Alexa, peça pro bora pro mercado anotar leite",
+            "Alexa, pergunte pro bora pro mercado o que falta"
           ],
-          "name": "Relação Mercado",
-          "description": "Skill personalizada para compartilhar e gerenciar uma relação de itens de mercado entre diferentes contas da Alexa usando uma planilha compartilhada do Google."
+          "name": "Bora pro Mercado",
+          "description": "Skill personalizada para gerenciar uma lista de mercado familiar compartilhada usando o Google Sheets."
         }
       },
       "isAvailableWorldwide": true,
-      "testingInstructions": "Skill de uso pessoal para gerenciar relação de mercado.",
+      "testingInstructions": "Skill de uso pessoal para gerenciar itens de mercado.",
       "category": "ORGANIZERS_AND_ASSISTANTS",
       "distributionCountries": []
     },

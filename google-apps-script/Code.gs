@@ -1,5 +1,6 @@
 /**
- * Google Apps Script - API REST para Lista de Compras compartilhada na Alexa
+ * Google Apps Script - API REST para a Skill Alexa "Bora pro Mercado"
+ * Planilha do Google: "Bora pro Mercado"
  * 
  * Configuração de Implantação:
  * - Tipo: App da Web (Web App)
@@ -56,7 +57,7 @@ function handleAdd(sheet, item) {
   sheet.appendRow([item, new Date()]);
   return responseJSON({
     success: true,
-    message: 'Item "' + item + '" adicionado com sucesso.',
+    message: 'Item "' + item + '" anotado com sucesso.',
     item: item
   });
 }
@@ -75,7 +76,7 @@ function handleRemove(sheet, item) {
       sheet.deleteRow(i + 1); // 1-indexed no Sheets
       return responseJSON({
         success: true,
-        message: 'Item "' + item + '" removido com sucesso.',
+        message: 'Item "' + item + '" riscado com sucesso.',
         item: item
       });
     }

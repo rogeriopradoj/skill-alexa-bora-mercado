@@ -6,8 +6,8 @@
           "summary": "Lista de mercado compartilhada em família sincronizada no Google Sheets.",
           "examplePhrases": [
             "Alexa, abra o bora pro mercado",
-            "Alexa, peça pro bora pro mercado anotar leite",
-            "Alexa, pergunte pro bora pro mercado o que falta"
+            "Alexa, inicie o bora pro mercado",
+            "Alexa, abra bora pro mercado"
           ],
           "name": "Bora pro Mercado",
           "description": "Skill personalizada para gerenciar uma lista de mercado familiar compartilhada usando o Google Sheets."

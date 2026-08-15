@@ -1,7 +1,7 @@
 {
-  "name": "skill-alexa-bora-pro-mercado-lambda",
+  "name": "skill-alexa-bora-mercado-lambda",
   "version": "1.0.0",
-  "description": "Lambda backend para a Alexa Skill Bora pro Mercado integrada ao Google Sheets",
+  "description": "Lambda backend para a Alexa Skill Bora Mercado integrada ao Google Sheets",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

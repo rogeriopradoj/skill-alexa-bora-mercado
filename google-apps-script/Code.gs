@@ -1,6 +1,6 @@
 /**
- * Google Apps Script - API REST para a Skill Alexa "Bora pro Mercado"
- * Planilha do Google: "Bora pro Mercado"
+ * Google Apps Script - API REST para a Skill Alexa "Bora Mercado"
+ * Planilha do Google: "Bora Mercado"
  * 
  * Configuração de Implantação:
  * - Tipo: App da Web (Web App)

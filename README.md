@@ -1,6 +1,6 @@
-# 🛒 skill-alexa-bora-pro-mercado
+# 🛒 skill-alexa-bora-mercado
 
-Skill customizada para a Amazon Alexa integrada a uma planilha do **Google Sheets** chamada **`Bora pro Mercado`** via **Google Apps Script**. Permite que você e sua esposa compartilhem a mesma lista de mercado usando o nome da skill e de invocação **`bora pro mercado`** com comandos super naturais.
+Skill customizada para a Amazon Alexa integrada a uma planilha do **Google Sheets** chamada **`Bora Mercado`** via **Google Apps Script**. Permite que você e sua esposa compartilhem a mesma lista de mercado usando o nome da skill e de invocação **`bora mercado`** com comandos super naturais.
 
 ---
 
@@ -9,19 +9,19 @@ Skill customizada para a Amazon Alexa integrada a uma planilha do **Google Sheet
 ```text
 [ Echo da Esposa ]  \
                      --> [ Alexa Custom Skill ] --> [ Google Apps Script ] --> [ Google Sheets ]
-[ Sua Echo ]        /    (Skill: Bora pro Mercado)  (API REST WebApp)      (Planilha: Bora pro Mercado)
+[ Sua Echo ]        /    (Skill: Bora Mercado)      (API REST WebApp)      (Planilha: Bora Mercado)
 ```
 
-- **Nome da Skill na Alexa**: `Bora pro Mercado`
-- **Nome de Invocação (Invocation Name)**: `bora pro mercado`
-- **Nome da Planilha no Google Sheets**: `Bora pro Mercado`
+- **Nome da Skill na Alexa**: `Bora Mercado`
+- **Nome de Invocação (Invocation Name)**: `bora mercado`
+- **Nome da Planilha no Google Sheets**: `Bora Mercado`
 
 ---
 
 ## 📁 Estrutura de Pastas
 
 ```text
-skill-alexa-bora-pro-mercado/
+skill-alexa-bora-mercado/
 ├── README.md                           # Guia de configuração e comandos
 ├── .gitignore                          # Arquivos ignorados pelo Git
 ├── assets/
@@ -41,32 +41,37 @@ skill-alexa-bora-pro-mercado/
 
 ---
 
-## 🚀 Passo a Passo de Atualização
+## 🚀 Passo a Passo de Configuração e Atualização
 
 ### 1. No Google Sheets
-- Altere o nome da sua planilha no Google Drive para **`Bora pro Mercado`**.
+- Altere o nome da sua planilha no Google Drive para **`Bora Mercado`**.
 
 ### 2. No Alexa Developer Console
-- **Nome da Skill**: Em **Skill Information**, mude o nome da Skill para **`Bora pro Mercado`**.
+- **Public Name**: Em **Skill Information** / **Distribution**, mude o nome da Skill para **`Bora Mercado`**.
+- **Skill Invocation Name**: Em **Build** > **Invocation**, defina o nome como **`bora mercado`** e clique em **Save Model** e em seguida **Build Model**.
 - **Modelo de Interação**: Em **Interaction Model** > **JSON Editor**, cole o conteúdo de [`alexa-skill/interactionModels/custom/pt-BR.json`](./alexa-skill/interactionModels/custom/pt-BR.json) e clique em **Save Model** e **Build Model**.
 - **Código Lambda**: Na aba **Code**, cole o conteúdo de [`alexa-skill/lambda/index.js`](./alexa-skill/lambda/index.js) e clique em **Save** e **Deploy**.
+- **Example Phrases (Distribution)**:
+  1. `Alexa, abra o bora mercado`
+  2. `Alexa, inicie o bora mercado`
+  3. `Alexa, abra bora mercado`
 
 ---
 
 ## 🗣️ Comandos de Voz Super Naturais
 
 ### Para Anotar (Adicionar):
-- *"Alexa, peça pro **bora pro mercado** anotar leite."*
-- *"Alexa, peça pro **bora pro mercado** botar pão."*
-- *"Alexa, fala pro **bora pro mercado** colocar café."*
+- *"Alexa, peça pro **bora mercado** anotar leite."*
+- *"Alexa, peça pro **bora mercado** botar pão."*
+- *"Alexa, fala pro **bora mercado** colocar café."*
 
 ### Para Consultar:
-- *"Alexa, pergunte pro **bora pro mercado** o que falta."*
-- *"Alexa, pergunte pro **bora pro mercado** o que precisamos."*
+- *"Alexa, pergunte pro **bora mercado** o que falta."*
+- *"Alexa, pergunte pro **bora mercado** o que precisamos."*
 
 ### Para Riscar (Remover):
-- *"Alexa, peça pro **bora pro mercado** riscar o leite."*
-- *"Alexa, fala pro **bora pro mercado** tirar o pão."*
+- *"Alexa, peça pro **bora mercado** riscar o leite."*
+- *"Alexa, fala pro **bora mercado** tirar o pão."*
 
 ---
 
@@ -75,4 +80,4 @@ skill-alexa-bora-pro-mercado/
 Se quiser falar frases ainda menores (ex: *"Alexa, anota leite"*):
 1. Abra o app da Alexa no celular (**Mais** > **Rotinas** > **+**).
 2. **Quando:** Você diz: *"Alexa, anota leite"*
-3. **Ação:** Personalizado -> *"Alexa, peça pro bora pro mercado anotar leite"*.
+3. **Ação:** Personalizado -> *"Alexa, peça pro bora mercado anotar leite"*.

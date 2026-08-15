@@ -5,11 +5,11 @@
         "pt-BR": {
           "summary": "Lista de mercado compartilhada em família sincronizada no Google Sheets.",
           "examplePhrases": [
-            "Alexa, abra o bora pro mercado",
-            "Alexa, inicie o bora pro mercado",
-            "Alexa, abra bora pro mercado"
+            "Alexa, abra o bora mercado",
+            "Alexa, inicie o bora mercado",
+            "Alexa, abra bora mercado"
           ],
-          "name": "Bora pro Mercado",
+          "name": "Bora Mercado",
           "description": "Skill personalizada para gerenciar uma lista de mercado familiar compartilhada usando o Google Sheets."
         }
       },

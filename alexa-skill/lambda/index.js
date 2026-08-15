@@ -44,13 +44,13 @@ function callScript(action, item = '') {
     });
 }
 
-// 1. LaunchRequest Handler (Quando você diz: "Alexa, abra o bora pro mercado")
+// 1. LaunchRequest Handler (Quando você diz: "Alexa, abra o bora mercado")
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
-        const speakOutput = 'Bora pro mercado! Você pode pedir para anotar um item, riscar um item ou perguntar o que falta.';
+        const speakOutput = 'Bora mercado! Você pode pedir para anotar um item, riscar um item ou perguntar o que falta.';
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt('O que quer anotar ou consultar?')

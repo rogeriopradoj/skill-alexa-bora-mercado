@@ -2,21 +2,28 @@ const Alexa = require('ask-sdk-core');
 const https = require('https');
 
 // ======================================================================================
-// CONFIGURAÇÃO DE SEGURANÇA: URL DO GOOGLE APPS SCRIPT
-// Em repositórios públicos, a URL real deve ser configurada em variáveis de ambiente
-// (process.env.GOOGLE_SCRIPT_URL) no console do Lambda / Alexa.
+// CONFIGURAÇÕES DE SEGURANÇA VIA VARIÁVEIS DE AMBIENTE (AWS LAMBDA / ALEXA CONSOLE)
+// 
+// No console da Alexa (Aba Code > Environment Variables), cadastre as variáveis:
+// 1. GOOGLE_SCRIPT_URL: URL da API gerada no Google Apps Script.
+// 2. ALLOWED_USERS_JSON: String JSON mapeando User IDs da Amazon para Nomes.
+//    Exemplo: {"amzn1.ask.account.AG123...":"Rogério", "amzn1.ask.account.AG456...":"Esposa"}
 // ======================================================================================
 const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL || 'COLE_AQUI_A_SUA_URL_DO_GOOGLE_APPS_SCRIPT';
 
-// ======================================================================================
-// LISTA VIP DE USUÁRIOS AUTORIZADOS (GOVERNANÇA & SEGURANÇA)
-// Quando publicado na loja, qualquer pessoa pode instalar a skill, MAS APENAS os User IDs
-// cadastrados nesta lista conseguirão adicionar/remover/consultar sua planilha!
-// ======================================================================================
-const ALLOWED_USERS = {
-    // 'amzn1.ask.account.AG123...': 'Rogério',
-    // 'amzn1.ask.account.AG456...': 'Esposa'
-};
+/**
+ * Lê e parseia a lista VIP de usuários autorizados a partir da variável de ambiente.
+ */
+function getAllowedUsers() {
+    try {
+        if (process.env.ALLOWED_USERS_JSON) {
+            return JSON.parse(process.env.ALLOWED_USERS_JSON);
+        }
+    } catch (e) {
+        console.error('Erro ao parsear ALLOWED_USERS_JSON das variáveis de ambiente:', e);
+    }
+    return {}; // Código público fica 100% limpo sem IDs ou nomes expostos
+}
 
 /**
  * Verifica se a conta solicitante possui permissão de acesso à planilha.
@@ -26,15 +33,16 @@ function checkAuthorization(handlerInput) {
                 || handlerInput.requestEnvelope?.context?.System?.user?.userId 
                 || '';
 
-    const keys = Object.keys(ALLOWED_USERS);
+    const allowedUsers = getAllowedUsers();
+    const keys = Object.keys(allowedUsers);
     
-    // Se a whitelist estiver vazia (modo inicial), permite todos
+    // Se a whitelist estiver vazia (modo inicial), permite todos para descoberta do ID
     if (keys.length === 0) {
         const shortId = userId ? userId.slice(-6) : 'Desconhecido';
         return { isAuthorized: true, user: `User_${shortId}`, userId: userId };
     }
 
-    const mappedName = ALLOWED_USERS[userId];
+    const mappedName = allowedUsers[userId];
     if (mappedName) {
         return { isAuthorized: true, user: mappedName, userId: userId };
     }

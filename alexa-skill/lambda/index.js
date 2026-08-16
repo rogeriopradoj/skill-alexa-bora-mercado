@@ -2,17 +2,16 @@ const Alexa = require('ask-sdk-core');
 const https = require('https');
 
 // ======================================================================================
-// CONFIGURE AQUI A URL DO SEU GOOGLE APPS SCRIPT
+// CONFIGURAÇÃO DE SEGURANÇA: URL DO GOOGLE APPS SCRIPT
+// Em repositórios públicos, a URL real deve ser configurada em variáveis de ambiente
+// (process.env.GOOGLE_SCRIPT_URL) no console do Lambda / Alexa.
 // ======================================================================================
-const GOOGLE_SCRIPT_URL = 'COLE_AQUI_A_SUA_URL_DO_GOOGLE_APPS_SCRIPT';
+const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL || 'COLE_AQUI_A_SUA_URL_DO_GOOGLE_APPS_SCRIPT';
 
 // ======================================================================================
 // LISTA VIP DE USUÁRIOS AUTORIZADOS (GOVERNANÇA & SEGURANÇA)
 // Quando publicado na loja, qualquer pessoa pode instalar a skill, MAS APENAS os User IDs
 // cadastrados nesta lista conseguirão adicionar/remover/consultar sua planilha!
-// 
-// Se a lista estiver vazia {}, qualquer pessoa da sua casa consegue usar para você
-// descobrir os User IDs gravados na planilha. Depois de colar os IDs aqui, a Skill fica 100% Privada!
 // ======================================================================================
 const ALLOWED_USERS = {
     // 'amzn1.ask.account.AG123...': 'Rogério',

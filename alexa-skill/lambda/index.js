@@ -2,28 +2,21 @@ const Alexa = require('ask-sdk-core');
 const https = require('https');
 
 // ======================================================================================
-// CONFIGURAÇÕES DE SEGURANÇA VIA VARIÁVEIS DE AMBIENTE (AWS LAMBDA / ALEXA CONSOLE)
-// 
-// No console da Alexa (Aba Code > Environment Variables), cadastre as variáveis:
-// 1. GOOGLE_SCRIPT_URL: URL da API gerada no Google Apps Script.
-// 2. ALLOWED_USERS_JSON: String JSON mapeando User IDs da Amazon para Nomes.
-//    Exemplo: {"amzn1.ask.account.AG123...":"Rogério", "amzn1.ask.account.AG456...":"Esposa"}
+// CONFIGURAÇÃO DE SEGURANÇA VIA ARQUIVO DE CONFIGURAÇÃO (config.json)
+// O arquivo config.json está no .gitignore e NUNCA é enviado para o GitHub público!
 // ======================================================================================
-const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL || 'COLE_AQUI_A_SUA_URL_DO_GOOGLE_APPS_SCRIPT';
+let config = {
+    GOOGLE_SCRIPT_URL: '',
+    ALLOWED_USERS: {}
+};
 
-/**
- * Lê e parseia a lista VIP de usuários autorizados a partir da variável de ambiente.
- */
-function getAllowedUsers() {
-    try {
-        if (process.env.ALLOWED_USERS_JSON) {
-            return JSON.parse(process.env.ALLOWED_USERS_JSON);
-        }
-    } catch (e) {
-        console.error('Erro ao parsear ALLOWED_USERS_JSON das variáveis de ambiente:', e);
-    }
-    return {}; // Código público fica 100% limpo sem IDs ou nomes expostos
+try {
+    config = require('./config.json');
+} catch (e) {
+    console.log('Aviso: config.json não encontrado. Certifique-se de criar o arquivo config.json no ambiente.');
 }
+
+const GOOGLE_SCRIPT_URL = config.GOOGLE_SCRIPT_URL || process.env.GOOGLE_SCRIPT_URL || '';
 
 /**
  * Verifica se a conta solicitante possui permissão de acesso à planilha.
@@ -33,10 +26,10 @@ function checkAuthorization(handlerInput) {
                 || handlerInput.requestEnvelope?.context?.System?.user?.userId 
                 || '';
 
-    const allowedUsers = getAllowedUsers();
+    const allowedUsers = config.ALLOWED_USERS || {};
     const keys = Object.keys(allowedUsers);
     
-    // Se a whitelist estiver vazia (modo inicial), permite todos para descoberta do ID
+    // Se a whitelist estiver vazia (modo inicial de descoberta), permite todos
     if (keys.length === 0) {
         const shortId = userId ? userId.slice(-6) : 'Desconhecido';
         return { isAuthorized: true, user: `User_${shortId}`, userId: userId };

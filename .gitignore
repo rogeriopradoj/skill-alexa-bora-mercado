@@ -3,6 +3,10 @@ node_modules/
 npm-debug.log
 yarn-error.log
 
+# Private Config File (Secrets)
+config.json
+alexa-skill/lambda/config.json
+
 # Operating System Files
 .DS_Store
 Thumbs.db

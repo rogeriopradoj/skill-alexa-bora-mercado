@@ -1,0 +1,7 @@
+{
+  "GOOGLE_SCRIPT_URL": "COLE_AQUI_A_SUA_URL_DO_GOOGLE_APPS_SCRIPT",
+  "ALLOWED_USERS": {
+    "amzn1.ask.account.EXEMPLO_ID_ROGERIO": "Rogério",
+    "amzn1.ask.account.EXEMPLO_ID_ESPOSA": "Esposa"
+  }
+}

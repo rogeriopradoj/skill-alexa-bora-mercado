@@ -3,43 +3,48 @@ const https = require('https');
 
 // ======================================================================================
 // CONFIGURE AQUI A URL DO SEU GOOGLE APPS SCRIPT
-// Exemplo: 'https://script.google.com/macros/s/AKfycb.../exec'
 // ======================================================================================
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyPVvtKt5tjzyCDzWNHQhfUjQNInnfCqpXbepZOjnb8S4is5O15MzxUX5q4b_HbiUCv/exec';
+const GOOGLE_SCRIPT_URL = 'COLE_AQUI_A_SUA_URL_DO_GOOGLE_APPS_SCRIPT';
 
 // ======================================================================================
-// MAPEAMENTO DE NOMES AMIGÁVEIS (GOVERNANÇA)
-// Para descobrir o seu userId da Alexa, faça um teste na skill.
-// O User ID será gravado na planilha do Google Sheets, depois você pode colar aqui!
-// Exemplo:
-// const USER_MAP = {
-//    'amzn1.ask.account.AG123...': 'Rogério',
-//    'amzn1.ask.account.AG456...': 'Esposa'
-// };
+// LISTA VIP DE USUÁRIOS AUTORIZADOS (GOVERNANÇA & SEGURANÇA)
+// Quando publicado na loja, qualquer pessoa pode instalar a skill, MAS APENAS os User IDs
+// cadastrados nesta lista conseguirão adicionar/remover/consultar sua planilha!
+// 
+// Se a lista estiver vazia {}, qualquer pessoa da sua casa consegue usar para você
+// descobrir os User IDs gravados na planilha. Depois de colar os IDs aqui, a Skill fica 100% Privada!
 // ======================================================================================
-const USER_MAP = {};
+const ALLOWED_USERS = {
+    // 'amzn1.ask.account.AG123...': 'Rogério',
+    // 'amzn1.ask.account.AG456...': 'Esposa'
+};
 
 /**
- * Utilitário para extrair as informações de identificação do Usuário da Alexa.
+ * Verifica se a conta solicitante possui permissão de acesso à planilha.
  */
-function getUserInfo(handlerInput) {
+function checkAuthorization(handlerInput) {
     const userId = handlerInput.requestEnvelope?.session?.user?.userId 
                 || handlerInput.requestEnvelope?.context?.System?.user?.userId 
                 || '';
 
-    const mappedName = USER_MAP[userId];
-    if (mappedName) {
-        return { user: mappedName, userId: userId };
+    const keys = Object.keys(ALLOWED_USERS);
+    
+    // Se a whitelist estiver vazia (modo inicial), permite todos
+    if (keys.length === 0) {
+        const shortId = userId ? userId.slice(-6) : 'Desconhecido';
+        return { isAuthorized: true, user: `User_${shortId}`, userId: userId };
     }
 
-    // Se ainda não foi mapeado, utiliza os últimos 6 caracteres do ID para identificar na planilha
-    const shortId = userId ? userId.slice(-6) : 'Desconhecido';
-    return { user: `User_${shortId}`, userId: userId };
+    const mappedName = ALLOWED_USERS[userId];
+    if (mappedName) {
+        return { isAuthorized: true, user: mappedName, userId: userId };
+    }
+
+    return { isAuthorized: false, user: 'Não Autorizado', userId: userId };
 }
 
 /**
  * Função utilitária para fazer chamadas HTTP GET ao Google Apps Script.
- * Trata automaticamente o redirecionamento HTTP 302 do Apps Script.
  */
 function callScript(action, item = '', user = '', userId = '') {
     return new Promise((resolve, reject) => {
@@ -79,8 +84,14 @@ const LaunchRequestHandler = {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
-        const { user } = getUserInfo(handlerInput);
-        const speakOutput = `Bora mercado, ${user}! Você pode pedir para anotar um item, riscar um item ou perguntar o que falta.`;
+        const auth = checkAuthorization(handlerInput);
+        if (!auth.isAuthorized) {
+            return handlerInput.responseBuilder
+                .speak('Desculpe, esta skill é privada e seu usuário não possui permissão de acesso à lista desta família.')
+                .getResponse();
+        }
+
+        const speakOutput = `Bora mercado, ${auth.user}! Você pode pedir para anotar um item, riscar um item ou perguntar o que falta.`;
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt('O que quer anotar ou consultar?')
@@ -95,8 +106,14 @@ const AdicionarItemIntentHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AdicionarItemIntent';
     },
     async handle(handlerInput) {
+        const auth = checkAuthorization(handlerInput);
+        if (!auth.isAuthorized) {
+            return handlerInput.responseBuilder
+                .speak('Desculpe, seu usuário não possui permissão para alterar esta lista.')
+                .getResponse();
+        }
+
         const item = Alexa.getSlotValue(handlerInput.requestEnvelope, 'item');
-        const { user, userId } = getUserInfo(handlerInput);
 
         if (!item) {
             return handlerInput.responseBuilder
@@ -106,7 +123,7 @@ const AdicionarItemIntentHandler = {
         }
 
         try {
-            await callScript('add', item, user, userId);
+            await callScript('add', item, auth.user, auth.userId);
             const speakOutput = `Anotado ${item}!`;
             return handlerInput.responseBuilder
                 .speak(speakOutput)
@@ -128,8 +145,14 @@ const RemoverItemIntentHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'RemoverItemIntent';
     },
     async handle(handlerInput) {
+        const auth = checkAuthorization(handlerInput);
+        if (!auth.isAuthorized) {
+            return handlerInput.responseBuilder
+                .speak('Desculpe, seu usuário não possui permissão para alterar esta lista.')
+                .getResponse();
+        }
+
         const item = Alexa.getSlotValue(handlerInput.requestEnvelope, 'item');
-        const { user, userId } = getUserInfo(handlerInput);
 
         if (!item) {
             return handlerInput.responseBuilder
@@ -139,7 +162,7 @@ const RemoverItemIntentHandler = {
         }
 
         try {
-            const res = await callScript('remove', item, user, userId);
+            const res = await callScript('remove', item, auth.user, auth.userId);
             let speakOutput = '';
             if (res.success) {
                 speakOutput = `Riscado ${item}.`;
@@ -167,6 +190,13 @@ const ListarItensIntentHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'ListarItensIntent';
     },
     async handle(handlerInput) {
+        const auth = checkAuthorization(handlerInput);
+        if (!auth.isAuthorized) {
+            return handlerInput.responseBuilder
+                .speak('Desculpe, seu usuário não possui permissão para consultar esta lista.')
+                .getResponse();
+        }
+
         try {
             const res = await callScript('list');
             let speakOutput = '';

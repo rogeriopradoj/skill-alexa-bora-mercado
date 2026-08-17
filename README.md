@@ -1,6 +1,6 @@
-# 🛒 Bora Mercado — Alexa Skill & Google Sheets (com Governança, Multilíngue e Segurança Privada)
+# 🛒 Bora Mercado — Alexa Skill & Google Sheets (com Governança e Segurança Privada)
 
-Skill customizada para a Amazon Alexa integrada a uma planilha do **Google Sheets** chamada **`Bora Mercado`** via **Google Apps Script**. Permite que você e sua família compartilhem a mesma lista de compras com comandos de voz super naturais, auditoria de inclusão/remoção e restrição de acesso por Whitelist de segurança.
+Skill customizada para a Amazon Alexa integrada a uma planilha do **Google Sheets** chamada **`Bora Mercado`** via **Google Apps Script**. Permite que você e sua família compartilhem a mesma lista de compras com comandos de voz super naturais em **Português (Brasil)**, auditoria de inclusão/remoção e restrição de acesso por Whitelist de segurança.
 
 ---
 
@@ -11,7 +11,7 @@ Skill customizada para a Amazon Alexa integrada a uma planilha do **Google Sheet
                 │ (Comandos por Voz: "anota leite", "risca pão", "o que falta")
                 ▼
       [ Alexa Custom Skill ]
-      └─ Host: AWS Lambda (Node.js)
+      └─ Host: AWS Lambda (Node.js - Locale pt-BR)
       └─ Configuração Privada: config.json (Segredos e Whitelist)
                 │
                 ▼ (HTTP GET JSON com tratamento de HTTP 302 Redirect)
@@ -40,15 +40,14 @@ skill-alexa-bora-mercado/
 ├── google-apps-script/
 │   └── Code.gs                         # Backend do Apps Script (criação automática de abas e log)
 └── alexa-skill/
-    ├── skill.json                      # Manifest da Skill (locales pt-BR e en-US)
+    ├── skill.json                      # Manifest da Skill (locale pt-BR)
     ├── interactionModels/
     │   └── custom/
-    │       ├── pt-BR.json              # Modelo de interação em Português
-    │       └── en-US.json              # Modelo de interação em Inglês (para dispositivos bilíngues)
+    │       └── pt-BR.json              # Modelo de interação em Português (Brasil)
     └── lambda/
         ├── index.js                    # Handler Node.js principal da Alexa
         ├── package.json                # Dependências Node.js (ask-sdk-core)
-        ├── config.example.json         # Modelo de configuração seguro para o Git publico
+        ├── config.example.json         # Modelo de configuração seguro para o Git público
         └── config.json                 # Arquivo de segredos privado (IGNORADO PELO GIT)
 ```
 
@@ -69,8 +68,6 @@ skill-alexa-bora-mercado/
    - **Quem tem acesso**: `Qualquer pessoa` (Anyone)
 6. Clique em **Implantar**, autorize o acesso e **copie a URL do Web App gerada** (`https://script.google.com/macros/s/.../exec`).
 
-> 💡 **Nota de Atualização do Apps Script**: Sempre que alterar o código no Apps Script, vá em *Gerenciar implantações* > *Editar* (ícone de lápis) > selecione **Nova versão** antes de salvar!
-
 ---
 
 ### 2. Configurar a Skill no Alexa Developer Console
@@ -81,9 +78,10 @@ skill-alexa-bora-mercado/
    - **Primary locale**: `Portuguese (BR)`
    - **Experience**: `Custom`
    - **Hosting resource**: `Alexa-hosted (Node.js)`
-3. **Importar Modelos de Interação**:
-   - No menu da esquerda, selecione `Portuguese (BR)` > **Interaction Model** > **JSON Editor**. Cole o conteúdo de [`alexa-skill/interactionModels/custom/pt-BR.json`](./alexa-skill/interactionModels/custom/pt-BR.json). Clique em **Save Model** e em **Build Model**.
-   - No seletor de idiomas no topo, adicione **`English (US)`**. Vá em **JSON Editor** no idioma inglês, cole o conteúdo de [`alexa-skill/interactionModels/custom/en-US.json`](./alexa-skill/interactionModels/custom/en-US.json). Clique em **Save Model** e **Build Model**.
+3. **Importar Modelo de Interação (pt-BR)**:
+   - No menu da esquerda, selecione `Portuguese (BR)` > **Interaction Model** > **JSON Editor**.
+   - Cole o conteúdo do arquivo [`alexa-skill/interactionModels/custom/pt-BR.json`](./alexa-skill/interactionModels/custom/pt-BR.json).
+   - Clique em **Save Model** e em **Build Model**.
 4. **Código Lambda**:
    - Na aba **Code**, cole o conteúdo de [`alexa-skill/lambda/index.js`](./alexa-skill/lambda/index.js) no arquivo `index.js`.
 5. **Configurar o Arquivo Privado `config.json`**:
@@ -105,7 +103,7 @@ skill-alexa-bora-mercado/
        1. `Alexa, abra o bora mercado`
        2. `Alexa, inicie o bora mercado`
        3. `Alexa, abra bora mercado`
-     - Preencha o campo **Privacy Policy URL** e **Terms of Use URL** com os links do seu GitHub:
+     - Preencha os campos **Privacy Policy URL** e **Terms of Use URL** com os links do seu GitHub:
        - `https://raw.githubusercontent.com/SEU_USUARIO/skill-alexa-bora-mercado/refs/heads/main/PRIVACY_POLICY.md`
        - `https://raw.githubusercontent.com/SEU_USUARIO/skill-alexa-bora-mercado/refs/heads/main/TERMS_OF_USE.md`
 
@@ -116,7 +114,7 @@ skill-alexa-bora-mercado/
 1. Com a Skill em Fase 1 (vazia), faça um teste na sua Alexa e peça para sua esposa falar um comando no celular/Echo dela:
    - *"Alexa, peça pro bora mercado anotar leite"*
 2. Abra a planilha **`Bora Mercado`** no Google Sheets.
-3. Observe a **Coluna D** (`User ID Alexa`) da aba `Itens`. Os códigos longos da Amazon de você e da sua esposa estarão gravados lá (ex: `amzn1.ask.account.AMAV4...`).
+3. Observe a **Coluna D** (`User ID Alexa`) da aba `Itens`. Os códigos longos da Amazon de você e da sua esposa estarão gravados lá.
 4. Volte na aba **Code** da Alexa no arquivo **`config.json`** e atualize para o formato final com os IDs capturados:
    ```json
    {
@@ -128,13 +126,10 @@ skill-alexa-bora-mercado/
    }
    ```
 5. Clique em **Save** e em **Deploy**.
-6. **Pronto!** A partir deste momento, qualquer pessoa estranha que tentar acessar a Skill será bloqueada automaticamente.
 
 ---
 
 ### 4. Publicação Oficial na Loja da Alexa (Certification)
-
-Para que a Skill funcione para sempre em todos os dispositivos da casa sem expirar testes beta:
 
 1. No console da Alexa, vá na aba **Certification** > **Validation**. Clique em **Run Validation**.
 2. Vá em **Certification** > **Submission** e clique em **Submit for Certification**.
@@ -142,7 +137,7 @@ Para que a Skill funcione para sempre em todos os dispositivos da casa sem expir
 
 ---
 
-## 🗣️ Comandos de Voz Recomendados
+## 🗣️ Comandos de Voz Recomendados (pt-BR)
 
 | Ação | Comando de Voz | Resposta da Alexa |
 | :--- | :--- | :--- |
@@ -159,9 +154,3 @@ Para não precisar falar *"peça pro bora mercado..."* toda vez:
 1. Abra o app da Alexa no celular (**Mais** > **Rotinas** > **+**).
 2. **Quando:** Você diz: *"Alexa, anota leite"*
 3. **Ação:** Personalizado -> *"Alexa, peça pro bora mercado anotar leite"*.
-
----
-
-## 🛡️ Garantia de Segurança no GitHub Público
-
-O arquivo `alexa-skill/lambda/config.json` está incluído no [`.gitignore`](./.gitignore). **Ele NUNCA é enviado para o seu repositório no GitHub**. Apenas o modelo público [`config.example.json`](./alexa-skill/lambda/config.example.json) é versionado, garantindo que sua URL do Google Apps Script e seus User IDs continuem 100% seguros e privados!

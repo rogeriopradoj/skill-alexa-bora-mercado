@@ -11,16 +11,6 @@
           ],
           "name": "Bora Mercado",
           "description": "Skill personalizada para gerenciar uma lista de mercado familiar compartilhada usando o Google Sheets."
-        },
-        "en-US": {
-          "summary": "Shared family shopping list synced with Google Sheets.",
-          "examplePhrases": [
-            "Alexa, open bora mercado",
-            "Alexa, start bora mercado",
-            "Alexa, open bora mercado"
-          ],
-          "name": "Bora Mercado",
-          "description": "Custom skill to manage a shared family market list synced with Google Sheets."
         }
       },
       "isAvailableWorldwide": true,

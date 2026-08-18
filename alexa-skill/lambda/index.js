@@ -68,7 +68,7 @@ async function checkAuthorization(handlerInput) {
 }
 
 function denied(handlerInput) {
-    return handlerInput.responseBuilder.speak('Seu acesso ainda não está autorizado. Diga cadastrar código dois mil seiscentos e vinte e seis.').getResponse();
+    return handlerInput.responseBuilder.speak('Seu acesso ainda não está autorizado. Para se cadastrar, diga cadastrar código, seguido do código que recebeu do administrador da lista.').getResponse();
 }
 
 const RequestLogger = { process(handlerInput) {

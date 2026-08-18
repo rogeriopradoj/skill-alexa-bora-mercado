@@ -1,6 +1,6 @@
-# 🛒 Bora Mercado — Alexa Skill & Google Sheets (com Governança e Segurança Privada)
+# 🛒 Bora Mercado — Alexa Skill & Google Sheets (com Governança e Cadastro por PIN)
 
-Skill customizada para a Amazon Alexa integrada a uma planilha do **Google Sheets** chamada **`Bora Mercado`** via **Google Apps Script**. Permite que você e sua família compartilhem a mesma lista de compras com comandos de voz super naturais em **Português (Brasil)**, auditoria de inclusão/remoção e restrição de acesso por Whitelist de segurança.
+Skill customizada para a Amazon Alexa integrada a uma planilha do **Google Sheets** chamada **`Bora Mercado`** via **Google Apps Script**. Permite que você e sua família compartilhem a mesma lista de compras com comandos de voz super naturais em **Português (Brasil)**, auditoria completa e cadastro automático de membros da família via código PIN.
 
 ---
 
@@ -8,20 +8,23 @@ Skill customizada para a Amazon Alexa integrada a uma planilha do **Google Sheet
 
 ```text
 [ Echo Spot / Echo Dot / App Alexa ]
-                │ (Comandos por Voz: "anota leite", "risca pão", "o que falta")
+                │ (Comandos por Voz: "anota leite", "dá baixa no leite", "o que falta")
+                │ (Cadastro: "cadastrar código 1234")
                 ▼
       [ Alexa Custom Skill ]
       └─ Host: AWS Lambda (Node.js - Locale pt-BR)
-      └─ Configuração Privada: config.json (Segredos e Whitelist)
+      └─ Configuração Privada: config.json (Apenas GOOGLE_SCRIPT_URL)
                 │
                 ▼ (HTTP GET JSON com tratamento de HTTP 302 Redirect)
      [ Google Apps Script ]
+      └─ Configuração do Script: FAMILY_PIN (Propriedade do Script no Google)
       └─ Implantação: Web App (Executar como 'Eu', Acesso 'Qualquer pessoa')
                 │
                 ▼
        [ Google Sheets: "Bora Mercado" ]
-       ├─ Aba 1: "Itens" (Lista ativa com Data e Usuário)
-       └─ Aba 2: "Historico_Removidos" (Trilha de Auditoria de Apagamentos)
+       ├─ Aba 1: "Itens" (Lista com Status ATIVO/REMOVIDO e Usuários)
+       ├─ Aba 2: "Historico_Removidos" (Trilha de Auditoria de Apagamentos)
+       └─ Aba 3: "Usuarios_Autorizados" (Cadastro Automático por PIN)
 ```
 
 ---
@@ -35,19 +38,19 @@ skill-alexa-bora-mercado/
 ├── TERMS_OF_USE.md                     # Termos de Uso oficial (para certificação Amazon)
 ├── .gitignore                          # Proteção Git (ignora config.json, node_modules, etc)
 ├── assets/
-│   ├── icon_108.png                    # Small Skill Icon (108x108 px com margem de 16px)
-│   └── icon_512.png                    # Large Skill Icon (512x512 px com margem de 75px)
+│   ├── icon_108.png                    # Small Skill Icon (108x108 px)
+│   └── icon_512.png                    # Large Skill Icon (512x512 px)
 ├── google-apps-script/
-│   └── Code.gs                         # Backend do Apps Script (criação automática de abas e log)
+│   └── Code.gs                         # Backend no Apps Script (Autenticação por PIN, abas e logs)
 └── alexa-skill/
     ├── skill.json                      # Manifest da Skill (locale pt-BR)
     ├── interactionModels/
     │   └── custom/
-    │       └── pt-BR.json              # Modelo de interação em Português (Brasil)
+    │       └── pt-BR.json              # Modelo de interação com CadastrarUsuarioIntent
     └── lambda/
         ├── index.js                    # Handler Node.js principal da Alexa
         ├── package.json                # Dependências Node.js (ask-sdk-core)
-        ├── config.example.json         # Modelo de configuração seguro para o Git público
+        ├── config.example.json         # Modelo de configuração público para o Git
         └── config.json                 # Arquivo de segredos privado (IGNORADO PELO GIT)
 ```
 
@@ -61,12 +64,21 @@ skill-alexa-bora-mercado/
 2. Compartilhe a planilha com o e-mail dos membros da família (permissão de **Editor**).
 3. No menu superior da planilha, vá em **Extensões** > **Apps Script**.
 4. Copie o conteúdo do arquivo [`google-apps-script/Code.gs`](./google-apps-script/Code.gs) e cole no editor.
-5. Clique em **Implantar** (Deploy) > **Nova implantação** (New Deployment).
+5. **Configurar a Senha de Cadastro (`FAMILY_PIN`)**:
+   - No menu lateral do Apps Script, clique em **Configurações do Projeto** (ícone de engrenagem ⚙️).
+   - Na seção **Propriedades do script**, clique em **Adicionar propriedade do script**:
+     - **Propriedade**: `FAMILY_PIN`
+     - **Valor**: Escolha uma senha numérica ou texto (ex: `1234`).
+   - Clique em **Salvar propriedades do script**.
+6. **Implantar como Web App**:
+   - Clique em **Implantar** (Deploy) > **Nova implantação** (New Deployment).
    - **Tipo**: App da Web (Web App)
    - **Descrição**: `API Bora Mercado`
    - **Executar como**: `Eu (seu e-mail)`
    - **Quem tem acesso**: `Qualquer pessoa` (Anyone)
-6. Clique em **Implantar**, autorize o acesso e **copie a URL do Web App gerada** (`https://script.google.com/macros/s/.../exec`).
+   - Clique em **Implantar**, autorize o acesso e **copie a URL do Web App gerada** (`https://script.google.com/macros/s/.../exec`).
+
+> 💡 **Nota de Atualização do Apps Script**: Sempre que alterar o código no Apps Script, vá em *Gerenciar implantações* > *Editar* (ícone de lápis) > selecione **Nova versão** antes de salvar!
 
 ---
 
@@ -87,11 +99,10 @@ skill-alexa-bora-mercado/
 5. **Configurar o Arquivo Privado `config.json`**:
    - Na aba **Code**, no menu lateral esquerdo abaixo de `lambda`, clique em **New File**.
    - Nomeie o arquivo como **`config.json`**.
-   - **Fase 1 (Descoberta dos User IDs)**: Cole a sua URL do Apps Script mantendo a whitelist vazia:
+   - Cole a sua URL do Apps Script:
      ```json
      {
-       "GOOGLE_SCRIPT_URL": "https://script.google.com/macros/s/SUA_URL_REAL/exec",
-       "ALLOWED_USERS": {}
+       "GOOGLE_SCRIPT_URL": "https://script.google.com/macros/s/SUA_URL_REAL/exec"
      }
      ```
    - Clique em **Save** e em **Deploy**.
@@ -109,23 +120,18 @@ skill-alexa-bora-mercado/
 
 ---
 
-### 3. Fase 2: Ativar a Whitelist de Segurança e Governança
+### 3. Cadastro por PIN e Edição de Nomes dos Membros
 
-1. Com a Skill em Fase 1 (vazia), faça um teste na sua Alexa e peça para sua esposa falar um comando no celular/Echo dela:
-   - *"Alexa, peça pro bora mercado anotar leite"*
-2. Abra a planilha **`Bora Mercado`** no Google Sheets.
-3. Observe a **Coluna D** (`User ID Alexa`) da aba `Itens`. Os códigos longos da Amazon de você e da sua esposa estarão gravados lá.
-4. Volte na aba **Code** da Alexa no arquivo **`config.json`** e atualize para o formato final com os IDs capturados:
-   ```json
-   {
-     "GOOGLE_SCRIPT_URL": "https://script.google.com/macros/s/SUA_URL_REAL/exec",
-     "ALLOWED_USERS": {
-       "amzn1.ask.account.SEU_ID_GERADO_NA_COLUNA_D...": "Rogério",
-       "amzn1.ask.account.ID_DA_ESPOSA_GERADO_NA_COLUNA_D...": "Esposa"
-     }
-   }
-   ```
-5. Clique em **Save** e em **Deploy**.
+1. Abra a Skill em qualquer dispositivo da casa ou no celular:
+   - *"Alexa, abra o bora mercado"*
+2. Se a sua conta ainda não estiver cadastrada, a Alexa dirá:
+   > *"Seu acesso ainda não está autorizado. Para se cadastrar, diga cadastrar código, seguido do código..."*
+3. Fale a senha configurada no `FAMILY_PIN`:
+   - *"Alexa, cadastrar código 1234"*
+4. A Alexa confirmará: *"Cadastro confirmado. Agora você pode usar o Bora Mercado."*
+5. Na planilha do Google Sheets, abra a aba **`Usuarios_Autorizados`**.
+6. Na Coluna B (`Nome`), troque o nome genérico (ex: `User_FCFTUM`) pelo seu nome real (**`Rogério`** ou **`Juliana`**).
+7. Repita o processo no celular/Echo da sua esposa com a mesma senha!
 
 ---
 
@@ -141,10 +147,10 @@ skill-alexa-bora-mercado/
 
 | Ação | Comando de Voz | Resposta da Alexa |
 | :--- | :--- | :--- |
-| **Anotar (Adicionar)** | *"Alexa, peça pro **bora mercado** anotar leite"* | *"Anotado leite!"* |
-| **Anotar (Sinônimos)** | *"Alexa, peça pro **bora mercado** botar/colocar pão"* | *"Anotado pão!"* |
+| **Cadastrar Membro** | *"Alexa, cadastrar código 1234"* | *"Cadastro confirmado..."* |
+| **Anotar (Adicionar)** | *"Alexa, peça pro **bora mercado** anotar leite"* | *"Anotado: leite."* |
+| **Dá Baixa (Remover)** | *"Alexa, peça pro **bora mercado** dar baixa no leite"* | *"Pronto, dei baixa em leite."* |
 | **Consultar** | *"Alexa, pergunte pro **bora mercado** o que falta"* | *"Tá faltando: leite, pão."* |
-| **Riscar (Remover)** | *"Alexa, peça pro **bora mercado** riscar o leite"* | *"Riscado leite."* |
 
 ---
 

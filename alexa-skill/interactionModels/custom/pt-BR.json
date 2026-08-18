@@ -1,31 +1,103 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "bora mercado",
+      "invocationName": "bora mercado jurogerpi",
       "intents": [
-        { "name": "AMAZON.CancelIntent", "samples": [] },
-        { "name": "AMAZON.HelpIntent", "samples": [] },
-        { "name": "AMAZON.StopIntent", "samples": [] },
-        { "name": "AMAZON.NavigateHomeIntent", "samples": [] },
-        { "name": "AMAZON.FallbackIntent", "samples": [] },
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
         {
           "name": "CadastrarUsuarioIntent",
-          "slots": [{ "name": "codigo", "type": "AMAZON.NUMBER" }],
-          "samples": ["cadastrar código {codigo}", "me cadastrar com código {codigo}", "autorizar código {codigo}", "liberar meu acesso com código {codigo}"]
+          "slots": [
+            {
+              "name": "codigo",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
+          "samples": [
+            "cadastrar código {codigo}",
+            "cadastrar o código {codigo}",
+            "meu código é {codigo}",
+            "código {codigo}",
+            "cadastrar {codigo}",
+            "senha {codigo}"
+          ]
         },
         {
           "name": "AdicionarItemIntent",
-          "slots": [{ "name": "item", "type": "AMAZON.SearchQuery" }],
-          "samples": ["anota {item}", "anotar {item}", "registra {item}", "registrar {item}", "coloca {item} para comprar", "colocar {item} para comprar"]
+          "slots": [
+            {
+              "name": "item",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "anota {item}",
+            "anotar {item}",
+            "bota {item}",
+            "botar {item}",
+            "coloca {item}",
+            "colocar {item}",
+            "inclui {item}",
+            "incluir {item}",
+            "marca {item}",
+            "marcar {item}",
+            "adiciona {item}",
+            "adicionar {item}"
+          ]
         },
         {
           "name": "RemoverItemIntent",
-          "slots": [{ "name": "item", "type": "AMAZON.SearchQuery" }],
-          "samples": ["dá baixa em {item}", "dar baixa em {item}", "dá baixa no {item}", "dar baixa no {item}", "dá baixa na {item}", "dar baixa na {item}", "registra como comprado {item}", "registrar como comprado {item}", "marca como comprado {item}", "marcar como comprado {item}", "marca {item} como comprado", "marcar {item} como comprado"]
+          "slots": [
+            {
+              "name": "item",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "dá baixa em {item}",
+            "dá baixa no {item}",
+            "dá baixa na {item}",
+            "marca como comprado {item}",
+            "marque como comprado {item}",
+            "comprei {item}",
+            "já comprei {item}",
+            "risca {item}",
+            "riscar {item}",
+            "tira {item}",
+            "tirar {item}",
+            "apaga {item}",
+            "apagar {item}",
+            "remove {item}",
+            "remover {item}"
+          ]
         },
         {
           "name": "ListarItensIntent",
-          "samples": ["o que falta", "o que precisamos", "o que tem para comprar", "o que falta comprar", "quais são os itens", "listar tudo", "me fala o que falta"]
+          "slots": [],
+          "samples": [
+            "o que falta",
+            "o que precisamos",
+            "o que tem para comprar",
+            "o que falta comprar",
+            "o que tem registrado",
+            "quais são os itens",
+            "quais os itens",
+            "listar tudo"
+          ]
         }
       ],
       "types": []

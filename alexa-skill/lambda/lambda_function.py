@@ -2,6 +2,8 @@ import os
 import json
 import urllib.request
 import urllib.parse
+import traceback
+
 from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.dispatch_components import AbstractRequestHandler, AbstractErrorHandler
 from ask_sdk_core.utils import is_request_type, is_intent_name
@@ -43,7 +45,7 @@ def get_temporary_name(user_id):
 
 def call_script(action, item='', user='', user_id='', code=''):
     if not GOOGLE_SCRIPT_URL:
-        raise Exception("GOOGLE_SCRIPT_URL não configurada.")
+        raise Exception("GOOGLE_SCRIPT_URL não configurada no config.json.")
     
     params = {'action': action}
     if item: params['item'] = item
@@ -241,7 +243,8 @@ class CatchAllExceptionHandler(AbstractErrorHandler):
     
     def handle(self, handler_input, exception):
         print(f"Erro capturado no ExceptionHandler: {exception}")
-        speech = "Ocorreu um erro ao processar seu pedido. Tente novamente em instantes."
+        traceback.print_exc()
+        speech = "Ocorreu um erro ao processar seu pedido. Tente novamente."
         return handler_input.response_builder.speak(speech).ask("Tente novamente.").response
 
 sb = SkillBuilder()
@@ -257,4 +260,22 @@ sb.add_request_handler(FallbackIntentHandler())
 sb.add_request_handler(SessionEndedRequestHandler())
 sb.add_error_handler(CatchAllExceptionHandler())
 
-lambda_handler = sb.lambda_handler()
+_sdk_handler = sb.lambda_handler()
+
+def lambda_handler(event, context):
+    try:
+        return _sdk_handler(event, context)
+    except Exception as err:
+        print(f"CRITICAL LAMBDA EXCEPTION: {err}")
+        traceback.print_exc()
+        err_msg = str(err).replace('<', '').replace('>', '')
+        return {
+            "version": "1.0",
+            "response": {
+                "outputSpeech": {
+                    "type": "SSML",
+                    "ssml": f"<speak>Erro no Lambda Python: {err_msg}</speak>"
+                },
+                "shouldEndSession": False
+            }
+        }

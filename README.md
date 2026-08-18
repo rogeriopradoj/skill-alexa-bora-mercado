@@ -1,6 +1,9 @@
 # 🛒 Bora Mercado JuRogerPi — Alexa Skill em Python & Google Sheets
 
-Skill customizada para a Amazon Alexa (hospedada em **Python**) integrada a uma planilha do **Google Sheets** chamada **`Bora Mercado`** via **Google Apps Script**. Permite que você e sua família compartilhem a mesma lista de compras com comandos de voz super naturais em **Português (Brasil)**, cadastro automático de membros da família via código PIN e governança completa.
+Skill customizada para a Amazon Alexa (hospedada em **Python 3.x**) integrada a uma planilha do **Google Sheets** chamada **`Bora Mercado`** via **Google Apps Script**. Permite que você e sua família compartilhem a mesma lista de compras com comandos de voz super naturais em **Português (Brasil)**, cadastro automático de membros da família via código PIN e governança completa.
+
+- **Repositório GitHub**: `https://github.com/rogeriopradoj/skill-alexa-bora-mercado-jurogerpi`
+- **Caminho da Pasta Local**: `~/contribs/skill-alexa-bora-mercado-jurogerpi`
 
 ---
 
@@ -33,7 +36,7 @@ Skill customizada para a Amazon Alexa (hospedada em **Python**) integrada a uma 
 ## 📁 Estrutura do Repositório
 
 ```text
-skill-alexa-bora-mercado/
+skill-alexa-bora-mercado-jurogerpi/
 ├── README.md                           # Documentação completa de arquitetura, setup e uso
 ├── PRIVACY_POLICY.md                   # Política de Privacidade oficial
 ├── TERMS_OF_USE.md                     # Termos de Uso oficial
@@ -88,6 +91,10 @@ skill-alexa-bora-mercado/
      }
      ```
    - Clique em **Save** e em **Deploy**.
+4. **Preenchimento de Distribuição**:
+   - Na aba **Distribution** > **Primary Details**:
+     - Privacy Policy URL: `https://raw.githubusercontent.com/rogeriopradoj/skill-alexa-bora-mercado-jurogerpi/refs/heads/main/PRIVACY_POLICY.md`
+     - Terms of Use URL: `https://raw.githubusercontent.com/rogeriopradoj/skill-alexa-bora-mercado-jurogerpi/refs/heads/main/TERMS_OF_USE.md`
 
 ---
 

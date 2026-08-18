@@ -1,13 +1,12 @@
 {
-  "name": "skill-alexa-bora-mercado-lambda",
+  "name": "skill-alexa-bora-mercado-jurogerpi-lambda",
   "version": "1.0.0",
-  "description": "Lambda backend para a Alexa Skill Bora Mercado integrada ao Google Sheets",
-  "main": "index.js",
+  "description": "Lambda Python backend para a Alexa Skill Bora Mercado JuRogerPi integrada ao Google Sheets",
+  "main": "lambda_function.py",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "ask-sdk-core": "^2.14.0",
-    "ask-sdk-model": "^1.42.0"
+    "ask-sdk-core": "^2.14.0"
   }
 }

@@ -1,14 +1,14 @@
-# Política de Privacidade — Alexa Skill "Bora Mercado"
+# Política de Privacidade — Alexa Skill "Bora Mercado JuRogerPi"
 
-**Última atualização:** 16 de Agosto de 2026
+**Última atualização:** 18 de Agosto de 2026
 
-Esta Política de Privacidade descreve como a Skill para Amazon Alexa **"Bora Mercado"** lida com suas informações e garante a sua privacidade ao utilizar nosso serviço.
+Esta Política de Privacidade descreve como a Skill para Amazon Alexa **"Bora Mercado JuRogerPi"** lida com suas informações e garante a sua privacidade ao utilizar nosso serviço.
 
 ---
 
 ## 1. Coleta de Informações Pessoais
 
-A Skill **Bora Mercado**:
+A Skill **Bora Mercado JuRogerPi**:
 - **NÃO** solicita, lê ou armazena dados de identificação pessoal do usuário (como nome completo, endereço de e-mail, número de telefone, localização física ou dados bancários).
 - **NÃO** realiza cobranças, compras no aplicativo ou transações financeiras.
 - **NÃO** compartilha ou vende qualquer informação para terceiros ou redes de publicidade.
@@ -45,4 +45,4 @@ Esta Política de Privacidade pode ser atualizada ocasionalmente para refletir m
 
 ## 6. Contato e Suporte
 
-Se você tiver dúvidas sobre esta Política de Privacidade ou sobre o funcionamento da Skill **Bora Mercado**, entre em contato através do repositório oficial do projeto no GitHub.
+Se você tiver dúvidas sobre esta Política de Privacidade ou sobre o funcionamento da Skill **Bora Mercado JuRogerPi**, entre em contato através do repositório oficial do projeto no GitHub (`https://github.com/rogeriopradoj/skill-alexa-bora-mercado-jurogerpi`).

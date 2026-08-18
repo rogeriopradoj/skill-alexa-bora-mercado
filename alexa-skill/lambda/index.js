@@ -2,8 +2,8 @@ const Alexa = require('ask-sdk-core');
 const https = require('https');
 
 // ======================================================================================
-// CONFIGURAÇÃO DE SEGURANÇA VIA ARQUIVO DE CONFIGURAÇÃO (config.json)
-// O arquivo config.json está no .gitignore e NUNCA é enviado para o GitHub público!
+// CONFIGURAÇÃO DE SEGURANÇA VIA config.json
+// O arquivo config.json deve permanecer no .gitignore.
 // ======================================================================================
 let config = {
     GOOGLE_SCRIPT_URL: '',
@@ -12,108 +12,238 @@ let config = {
 
 try {
     config = require('./config.json');
-} catch (e) {
-    console.log('Aviso: config.json não encontrado. Certifique-se de criar o arquivo config.json no ambiente.');
+} catch (error) {
+    console.log('Aviso: config.json não encontrado. Verifique a configuração do ambiente.');
 }
 
 const GOOGLE_SCRIPT_URL = config.GOOGLE_SCRIPT_URL || process.env.GOOGLE_SCRIPT_URL || '';
+const MAX_REDIRECTS = 5;
+const REQUEST_TIMEOUT_MS = 10000;
 
 /**
- * Verifica se a conta solicitante possui permissão de acesso à planilha.
+ * Recupera o userId da conta Alexa e verifica se ela possui acesso.
  */
 function checkAuthorization(handlerInput) {
-    const userId = handlerInput.requestEnvelope?.session?.user?.userId 
-                || handlerInput.requestEnvelope?.context?.System?.user?.userId 
-                || '';
+    const userId =
+        handlerInput.requestEnvelope?.session?.user?.userId ||
+        handlerInput.requestEnvelope?.context?.System?.user?.userId ||
+        '';
 
     const allowedUsers = config.ALLOWED_USERS || {};
-    const keys = Object.keys(allowedUsers);
-    
-    // Se a whitelist estiver vazia (modo inicial de descoberta), permite todos
-    if (keys.length === 0) {
+    const configuredUserIds = Object.keys(allowedUsers);
+
+    // Modo inicial: sem usuários configurados, permite acesso e registra um nome temporário.
+    if (configuredUserIds.length === 0) {
         const shortId = userId ? userId.slice(-6) : 'Desconhecido';
-        return { isAuthorized: true, user: `User_${shortId}`, userId: userId };
+
+        return {
+            isAuthorized: true,
+            user: `User_${shortId}`,
+            userId
+        };
     }
 
     const mappedName = allowedUsers[userId];
+
     if (mappedName) {
-        return { isAuthorized: true, user: mappedName, userId: userId };
+        return {
+            isAuthorized: true,
+            user: mappedName,
+            userId
+        };
     }
 
-    return { isAuthorized: false, user: 'Não Autorizado', userId: userId };
+    return {
+        isAuthorized: false,
+        user: 'Não Autorizado',
+        userId
+    };
+}
+
+function unauthorizedResponse(handlerInput, action) {
+    return handlerInput.responseBuilder
+        .speak(`Desculpe, seu usuário não possui permissão para ${action}.`)
+        .getResponse();
 }
 
 /**
- * Função utilitária para fazer chamadas HTTP GET ao Google Apps Script.
+ * Faz uma chamada GET ao Google Apps Script.
+ * Trata redirecionamentos, códigos HTTP inválidos, timeout e resposta JSON.
  */
 function callScript(action, item = '', user = '', userId = '') {
+    if (!GOOGLE_SCRIPT_URL) {
+        return Promise.reject(
+            new Error('GOOGLE_SCRIPT_URL não configurada no config.json ou nas variáveis de ambiente.')
+        );
+    }
+
+    let requestUrl;
+
+    try {
+        const url = new URL(GOOGLE_SCRIPT_URL);
+
+        url.searchParams.set('action', action);
+
+        if (item) {
+            url.searchParams.set('item', item);
+        }
+
+        if (user) {
+            url.searchParams.set('user', user);
+        }
+
+        if (userId) {
+            url.searchParams.set('userId', userId);
+        }
+
+        requestUrl = url.toString();
+    } catch (error) {
+        return Promise.reject(new Error(`GOOGLE_SCRIPT_URL inválida: ${error.message}`));
+    }
+
     return new Promise((resolve, reject) => {
-        let url = `${GOOGLE_SCRIPT_URL}?action=${action}`;
-        if (item) url += `&item=${encodeURIComponent(item)}`;
-        if (user) url += `&user=${encodeURIComponent(user)}`;
-        if (userId) url += `&userId=${encodeURIComponent(userId)}`;
+        const fetchUrl = (targetUrl, redirectCount = 0) => {
+            let request;
 
-        const fetchUrl = (targetUrl) => {
-            https.get(targetUrl, (res) => {
-                if (res.statusCode === 301 || res.statusCode === 302) {
-                    if (res.headers.location) {
-                        return fetchUrl(res.headers.location);
-                    }
-                }
+            try {
+                request = https.get(targetUrl, (response) => {
+                    const statusCode = response.statusCode || 0;
+                    const redirectCodes = [301, 302, 303, 307, 308];
 
-                let data = '';
-                res.on('data', (chunk) => { data += chunk; });
-                res.on('end', () => {
-                    try {
-                        const parsed = JSON.parse(data);
-                        resolve(parsed);
-                    } catch (e) {
-                        reject(new Error(`Erro ao parsear JSON da resposta: ${data}`));
+                    if (redirectCodes.includes(statusCode)) {
+                        const location = response.headers.location;
+
+                        response.resume();
+
+                        if (!location) {
+                            reject(new Error(`Redirecionamento HTTP ${statusCode} sem destino.`));
+                            return;
+                        }
+
+                        if (redirectCount >= MAX_REDIRECTS) {
+                            reject(new Error('Quantidade máxima de redirecionamentos excedida.'));
+                            return;
+                        }
+
+                        let nextUrl;
+
+                        try {
+                            nextUrl = new URL(location, targetUrl).toString();
+                        } catch (error) {
+                            reject(new Error(`URL de redirecionamento inválida: ${error.message}`));
+                            return;
+                        }
+
+                        fetchUrl(nextUrl, redirectCount + 1);
+                        return;
                     }
+
+                    if (statusCode < 200 || statusCode >= 300) {
+                        response.resume();
+                        reject(new Error(`Google Apps Script respondeu com HTTP ${statusCode}.`));
+                        return;
+                    }
+
+                    let data = '';
+
+                    response.setEncoding('utf8');
+
+                    response.on('data', (chunk) => {
+                        data += chunk;
+                    });
+
+                    response.on('end', () => {
+                        try {
+                            const parsed = JSON.parse(data.replace(/^\uFEFF/, ''));
+
+                            if (!parsed || typeof parsed !== 'object') {
+                                reject(new Error('A resposta do Apps Script não contém um JSON válido.'));
+                                return;
+                            }
+
+                            resolve(parsed);
+                        } catch (error) {
+                            reject(
+                                new Error(
+                                    `Erro ao interpretar a resposta do Apps Script: ${error.message}`
+                                )
+                            );
+                        }
+                    });
                 });
-            }).on('error', (err) => reject(err));
+
+                request.setTimeout(REQUEST_TIMEOUT_MS, () => {
+                    request.destroy(
+                        new Error('Tempo limite ao conectar com o Google Apps Script.')
+                    );
+                });
+
+                request.on('error', reject);
+            } catch (error) {
+                reject(error);
+            }
         };
 
-        fetchUrl(url);
+        fetchUrl(requestUrl);
     });
 }
 
-// 1. LaunchRequest Handler
+function launchResponse(handlerInput) {
+    const auth = checkAuthorization(handlerInput);
+
+    if (!auth.isAuthorized) {
+        return unauthorizedResponse(handlerInput, 'acessar esta lista');
+    }
+
+    const speakOutput =
+        `Bora Mercado, ${auth.user}! ` +
+        'Você pode dizer, por exemplo, anota leite, dá baixa em leite, ou perguntar o que falta.';
+
+    return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt('O que você quer anotar, marcar como comprado ou consultar?')
+        .getResponse();
+}
+
+// 1. LaunchRequest
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
-        const auth = checkAuthorization(handlerInput);
-        if (!auth.isAuthorized) {
-            return handlerInput.responseBuilder
-                .speak('Desculpe, esta skill é privada e seu usuário não possui permissão de acesso à lista desta família.')
-                .getResponse();
-        }
-
-        const speakOutput = `Bora mercado, ${auth.user}! Você pode pedir para anotar um item, riscar um item ou perguntar o que falta.`;
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            .reprompt('O que quer anotar ou consultar?')
-            .getResponse();
+        return launchResponse(handlerInput);
     }
 };
 
-// 2. AdicionarItemIntent Handler
+// 2. Navegação para a skill
+const NavigateHomeIntentHandler = {
+    canHandle(handlerInput) {
+        return (
+            Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+            Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NavigateHomeIntent'
+        );
+    },
+    handle(handlerInput) {
+        return launchResponse(handlerInput);
+    }
+};
+
+// 3. Adicionar item
 const AdicionarItemIntentHandler = {
     canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AdicionarItemIntent';
+        return (
+            Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+            Alexa.getIntentName(handlerInput.requestEnvelope) === 'AdicionarItemIntent'
+        );
     },
     async handle(handlerInput) {
         const auth = checkAuthorization(handlerInput);
+
         if (!auth.isAuthorized) {
-            return handlerInput.responseBuilder
-                .speak('Desculpe, seu usuário não possui permissão para alterar esta lista.')
-                .getResponse();
+            return unauthorizedResponse(handlerInput, 'alterar esta lista');
         }
 
-        const item = Alexa.getSlotValue(handlerInput.requestEnvelope, 'item');
+        const item = Alexa.getSlotValue(handlerInput.requestEnvelope, 'item')?.trim();
 
         if (!item) {
             return handlerInput.responseBuilder
@@ -123,14 +253,22 @@ const AdicionarItemIntentHandler = {
         }
 
         try {
-            await callScript('add', item, auth.user, auth.userId);
-            const speakOutput = `Anotado ${item}!`;
+            const response = await callScript('add', item, auth.user, auth.userId);
+
+            if (!response.success) {
+                return handlerInput.responseBuilder
+                    .speak(`Não consegui anotar ${item}.`)
+                    .reprompt('Quer tentar anotar outro item?')
+                    .getResponse();
+            }
+
             return handlerInput.responseBuilder
-                .speak(speakOutput)
+                .speak(`Anotado: ${item}.`)
                 .reprompt('Quer anotar mais alguma coisa?')
                 .getResponse();
         } catch (error) {
             console.error('Erro no AdicionarItemIntent:', error);
+
             return handlerInput.responseBuilder
                 .speak(`Tive um problema ao conectar com a planilha para anotar ${item}.`)
                 .getResponse();
@@ -138,155 +276,183 @@ const AdicionarItemIntentHandler = {
     }
 };
 
-// 3. RemoverItemIntent Handler
+// 4. Marcar item como comprado
 const RemoverItemIntentHandler = {
     canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'RemoverItemIntent';
+        return (
+            Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+            Alexa.getIntentName(handlerInput.requestEnvelope) === 'RemoverItemIntent'
+        );
     },
     async handle(handlerInput) {
         const auth = checkAuthorization(handlerInput);
+
         if (!auth.isAuthorized) {
-            return handlerInput.responseBuilder
-                .speak('Desculpe, seu usuário não possui permissão para alterar esta lista.')
-                .getResponse();
+            return unauthorizedResponse(handlerInput, 'alterar esta lista');
         }
 
-        const item = Alexa.getSlotValue(handlerInput.requestEnvelope, 'item');
+        const item = Alexa.getSlotValue(handlerInput.requestEnvelope, 'item')?.trim();
 
         if (!item) {
             return handlerInput.responseBuilder
-                .speak('Não entendi qual item você quer riscar. Pode me dizer o nome do item?')
-                .reprompt('Qual item quer riscar?')
+                .speak('Não entendi qual item você quer marcar como comprado. Pode repetir?')
+                .reprompt('Qual item você quer marcar como comprado?')
                 .getResponse();
         }
 
         try {
-            const res = await callScript('remove', item, auth.user, auth.userId);
-            let speakOutput = '';
-            if (res.success) {
-                speakOutput = `Riscado ${item}.`;
-            } else {
-                speakOutput = `Não encontrei ${item} para riscar.`;
-            }
+            const response = await callScript('remove', item, auth.user, auth.userId);
+
+            const speakOutput = response.success
+                ? `Pronto, dei baixa em ${item}.`
+                : `Não encontrei ${item} na lista atual.`;
 
             return handlerInput.responseBuilder
                 .speak(speakOutput)
-                .reprompt('Quer alterar mais alguma coisa?')
+                .reprompt('Quer anotar outro item, dar baixa em algo ou consultar a lista?')
                 .getResponse();
         } catch (error) {
             console.error('Erro no RemoverItemIntent:', error);
+
             return handlerInput.responseBuilder
-                .speak(`Tive um problema ao comunicar com a planilha ao tentar riscar ${item}.`)
+                .speak(
+                    `Tive um problema ao conectar com a planilha para dar baixa em ${item}.`
+                )
                 .getResponse();
         }
     }
 };
 
-// 4. ListarItensIntent Handler
+// 5. Listar itens
 const ListarItensIntentHandler = {
     canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'ListarItensIntent';
+        return (
+            Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+            Alexa.getIntentName(handlerInput.requestEnvelope) === 'ListarItensIntent'
+        );
     },
     async handle(handlerInput) {
         const auth = checkAuthorization(handlerInput);
+
         if (!auth.isAuthorized) {
-            return handlerInput.responseBuilder
-                .speak('Desculpe, seu usuário não possui permissão para consultar esta lista.')
-                .getResponse();
+            return unauthorizedResponse(handlerInput, 'consultar esta lista');
         }
 
         try {
-            const res = await callScript('list');
-            let speakOutput = '';
+            const response = await callScript('list');
+            const items = Array.isArray(response.items) ? response.items : [];
 
-            if (res.items && res.items.length > 0) {
-                const listaFormatada = res.items.join(', ');
-                speakOutput = `Tá faltando: ${listaFormatada}.`;
-            } else {
-                speakOutput = 'Não tá faltando nada, a lista tá vazia!';
-            }
+            const speakOutput =
+                items.length > 0
+                    ? `Tá faltando: ${items.join(', ')}.`
+                    : 'Não tá faltando nada. A lista está vazia.';
 
-            return handlerInput.responseBuilder
-                .speak(speakOutput)
-                .getResponse();
+            return handlerInput.responseBuilder.speak(speakOutput).getResponse();
         } catch (error) {
             console.error('Erro no ListarItensIntent:', error);
+
             return handlerInput.responseBuilder
-                .speak('Desculpe, não consegui consultar o Google Sheets no momento.')
+                .speak('Desculpe, não consegui consultar a lista no momento.')
                 .getResponse();
         }
     }
 };
 
-// 5. HelpIntent Handler
+// 6. Ajuda
 const HelpIntentHandler = {
     canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.HelpIntent';
+        return (
+            Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+            Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.HelpIntent'
+        );
     },
     handle(handlerInput) {
-        const speakOutput = 'Você pode dizer "anota leite", "risca pão" ou "o que falta". Como posso ajudar?';
+        const auth = checkAuthorization(handlerInput);
+
+        if (!auth.isAuthorized) {
+            return unauthorizedResponse(handlerInput, 'acessar esta lista');
+        }
+
+        const speakOutput =
+            'Você pode dizer: anota leite, registra arroz, dá baixa em leite, ' +
+            'marca como comprado pão, ou perguntar o que falta. Como posso ajudar?';
+
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt(speakOutput)
+            .reprompt('O que você quer fazer?')
             .getResponse();
     }
 };
 
-// 6. CancelAndStopIntent Handler
+// 7. Cancelar ou parar
 const CancelAndStopIntentHandler = {
     canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.CancelIntent'
-                || Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.StopIntent');
+        return (
+            Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+            ['AMAZON.CancelIntent', 'AMAZON.StopIntent'].includes(
+                Alexa.getIntentName(handlerInput.requestEnvelope)
+            )
+        );
     },
     handle(handlerInput) {
-        const speakOutput = 'Até mais!';
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            .getResponse();
+        return handlerInput.responseBuilder.speak('Até mais!').getResponse();
     }
 };
 
-// 7. FallbackIntent Handler
+// 8. Frase não compreendida
 const FallbackIntentHandler = {
     canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.FallbackIntent';
+        return (
+            Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+            Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.FallbackIntent'
+        );
     },
     handle(handlerInput) {
-        const speakOutput = 'Desculpe, não entendi. Você pode dizer "anota leite" ou perguntar "o que falta".';
+        const auth = checkAuthorization(handlerInput);
+
+        if (!auth.isAuthorized) {
+            return unauthorizedResponse(handlerInput, 'acessar esta lista');
+        }
+
+        const speakOutput =
+            'Não entendi. Você pode dizer anota leite, dá baixa em leite, ' +
+            'marca como comprado pão, ou perguntar o que falta.';
+
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt('Como posso ajudar?')
+            .reprompt('O que você quer fazer?')
             .getResponse();
     }
 };
 
-// 8. SessionEndedRequestHandler
+// 9. Encerramento de sessão
 const SessionEndedRequestHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'SessionEndedRequest';
     },
     handle(handlerInput) {
-        console.log(`Sessão encerrada com o motivo: ${handlerInput.requestEnvelope.request.reason}`);
+        console.log(
+            `Sessão encerrada: ${handlerInput.requestEnvelope.request.reason || 'motivo não informado'}`
+        );
+
         return handlerInput.responseBuilder.getResponse();
     }
 };
 
-// 9. ErrorHandler (Tratamento de exceções globais)
+// 10. Exceções não tratadas
 const ErrorHandler = {
     canHandle() {
         return true;
     },
     handle(handlerInput, error) {
-        console.error(`Erro capturado pelo Handler: ${error.stack}`);
-        const speakOutput = 'Ocorreu um erro ao processar seu pedido. Por favor, tente novamente.';
+        console.error('Erro capturado pelo ErrorHandler:', error);
+
+        const speakOutput =
+            'Ocorreu um erro ao processar seu pedido. Por favor, tente novamente.';
+
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt(speakOutput)
+            .reprompt('Você pode tentar novamente.')
             .getResponse();
     }
 };
@@ -294,6 +460,7 @@ const ErrorHandler = {
 exports.handler = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
+        NavigateHomeIntentHandler,
         AdicionarItemIntentHandler,
         RemoverItemIntentHandler,
         ListarItensIntentHandler,

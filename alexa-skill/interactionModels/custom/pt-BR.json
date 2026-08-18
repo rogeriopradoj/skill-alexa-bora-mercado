@@ -1,84 +1,86 @@
 {
-  "interactionModel": {
-    "languageModel": {
-      "invocationName": "bora mercado",
-      "intents": [
-        {
-          "name": "AMAZON.CancelIntent",
-          "samples": []
-        },
-        {
-          "name": "AMAZON.HelpIntent",
-          "samples": []
-        },
-        {
-          "name": "AMAZON.StopIntent",
-          "samples": []
-        },
-        {
-          "name": "AMAZON.NavigateHomeIntent",
-          "samples": []
-        },
-        {
-          "name": "AdicionarItemIntent",
-          "slots": [
-            {
-              "name": "item",
-              "type": "AMAZON.SearchQuery"
-            }
-          ],
-          "samples": [
-            "anota {item}",
-            "anotar {item}",
-            "bota {item}",
-            "botar {item}",
-            "coloca {item}",
-            "colocar {item}",
-            "inclui {item}",
-            "incluir {item}",
-            "marca {item}",
-            "marcar {item}",
-            "adiciona {item}",
-            "adicionar {item}"
-          ]
-        },
-        {
-          "name": "RemoverItemIntent",
-          "slots": [
-            {
-              "name": "item",
-              "type": "AMAZON.SearchQuery"
-            }
-          ],
-          "samples": [
-            "risca {item}",
-            "riscar {item}",
-            "tira {item}",
-            "tirar {item}",
-            "apaga {item}",
-            "apagar {item}",
-            "já comprei {item}",
-            "comprei {item}",
-            "remove {item}",
-            "remover {item}"
-          ]
-        },
-        {
-          "name": "ListarItensIntent",
-          "slots": [],
-          "samples": [
-            "o que falta",
-            "o que precisamos",
-            "o que tem para comprar",
-            "o que falta comprar",
-            "o que tem registrado",
-            "quais são os itens",
-            "quais os itens",
-            "listar tudo"
-          ]
+    "interactionModel": {
+        "languageModel": {
+            "invocationName": "bora mercado",
+            "intents": [
+                {
+                    "name": "AMAZON.CancelIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.HelpIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.StopIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.NavigateHomeIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AdicionarItemIntent",
+                    "slots": [
+                        {
+                            "name": "item",
+                            "type": "AMAZON.SearchQuery"
+                        }
+                    ],
+                    "samples": [
+                        "anota {item}",
+                        "anotar {item}",
+                        "bora mercado anota {item}",
+                        "bora mercado anotar {item}",
+                        "registra {item}",
+                        "registrar {item}",
+                        "coloca {item} no bora mercado",
+                        "colocar {item} no bora mercado",
+                        "registra {item} para comprar",
+                        "registrar {item} para comprar"
+                    ]
+                },
+                {
+                    "name": "RemoverItemIntent",
+                    "slots": [
+                        {
+                            "name": "item",
+                            "type": "AMAZON.SearchQuery"
+                        }
+                    ],
+                    "samples": [
+                        "dá baixa em {item}",
+                        "dar baixa em {item}",
+                        "registra como comprado {item}",
+                        "registrar como comprado {item}",
+                        "marca como comprado {item}",
+                        "marcar como comprado {item}",
+                        "conclui a compra de {item}",
+                        "concluir a compra de {item}",
+                        "finaliza a compra de {item}",
+                        "finalizar a compra de {item}"
+                    ]
+                },
+                {
+                    "name": "ListarItensIntent",
+                    "slots": [],
+                    "samples": [
+                        "o que falta",
+                        "o que precisamos",
+                        "o que tem para comprar",
+                        "o que falta comprar",
+                        "o que tem registrado",
+                        "quais são os itens",
+                        "quais os itens",
+                        "listar tudo",
+                        "me fala o que falta",
+                        "fala o que falta",
+                        "me diga o que falta",
+                        "diz o que falta"
+                    ]
+                }
+            ],
+            "types": []
         }
-      ],
-      "types": []
     }
-  }
 }

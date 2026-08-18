@@ -1,14 +1,17 @@
+/**
+ * Google Apps Script - API REST com Inteligência Artificial (Gemini 1.5/2.5 Flash)
+ * Planilha: "Bora Mercado"
+ */
+
 function getFamilyPin() {
   var pin = PropertiesService.getScriptProperties().getProperty('FAMILY_PIN');
   if (!pin) throw new Error('A propriedade FAMILY_PIN não foi configurada.');
   return String(pin).trim();
 }
 
-function cleanItemName(str) {
-  return String(str || '')
-    .toLowerCase()
-    .trim()
-    .replace(/^(o|a|os|as|do|da|dos|das|um|uma|uns|umas)\s+/i, '');
+function getGeminiApiKey() {
+  var key = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
+  return key ? String(key).trim() : '';
 }
 
 function doGet(e) {
@@ -22,11 +25,24 @@ function doGet(e) {
     var itens = getOrCreateSheet(ss, 'Itens');
     var historico = getOrCreateSheet(ss, 'Historico_Removidos');
     ensureItens(itens); ensureHistorico(historico);
+
+    if (action === 'authorize') return handleAuthorize(ss, userId);
+    if (action === 'register') return handleRegister(ss, p.code || '', user, userId);
+
+    // Se houver chave do Gemini configurada e um item/frase for enviado, usamos o Gemini AI
+    var apiKey = getGeminiApiKey();
+    if (apiKey && (action === 'add' || action === 'remove' || item)) {
+      var aiResult = processWithGeminiAI(apiKey, action, item, getActiveItemsList(itens));
+      if (aiResult && aiResult.action) {
+        action = aiResult.action;
+        if (aiResult.item) item = aiResult.item;
+      }
+    }
+
     if (action === 'list') return handleList(itens);
     if (action === 'add') return handleAdd(itens, item, user, userId);
     if (action === 'remove') return handleRemove(itens, historico, item, user, userId);
-    if (action === 'authorize') return handleAuthorize(ss, userId);
-    if (action === 'register') return handleRegister(ss, p.code || '', user, userId);
+    
     return responseJSON({ success: false, message: 'Ação inválida.' });
   } catch (error) { return responseJSON({ success: false, message: error.toString() }); }
 }
@@ -52,23 +68,65 @@ function ensureHistorico(sheet) {
 }
 function now() { return Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm:ss'); }
 
-function handleList(sheet) {
+function getActiveItemsList(sheet) {
   var data = sheet.getDataRange().getValues(), items = [];
   for (var i = 1; i < data.length; i++) if (data[i][0] && String(data[i][4]).toUpperCase() === 'ATIVO') items.push(String(data[i][0]).trim());
+  return items;
+}
+
+function processWithGeminiAI(apiKey, actionHint, userInput, activeItems) {
+  try {
+    var url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + apiKey;
+    var prompt = "Você é um assistente de inteligência artificial de lista de supermercado familiar.\n" +
+      "Itens atualmente ATIVOS na lista de compras: " + JSON.stringify(activeItems) + "\n" +
+      "Ação sugerida da Alexa: '" + actionHint + "'\n" +
+      "Frase ou item dito pelo usuário: '" + userInput + "'\n\n" +
+      "Sua tarefa:\n" +
+      "1. Se o usuário quiser ADICIONAR ou ANOTAR algo, identifique o nome limpo e singular do item (ex: 'leite', 'pão', 'cachorro') e retorne {\"action\": \"add\", \"item\": \"nome_do_item\"}.\n" +
+      "2. Se o usuário quiser REMOVER, RISCAR, DAR BAIXA ou COMPROU algo (ex: 'comprei a ração do bicho', 'tira o cão', 'risca o leite'), identifique qual item da lista ativa corresponde (ex: 'cachorro') e retorne {\"action\": \"remove\", \"item\": \"item_correspondente_da_lista\"}.\n" +
+      "3. Se o usuário quiser CONSULTAR o que falta, retorne {\"action\": \"list\", \"item\": \"\"}.\n" +
+      "Responda EXCLUSIVAMENTE um objeto JSON válido no formato {\"action\": \"...\", \"item\": \"...\"} sem marcações markdown extra.";
+
+    var payload = {
+      "contents": [{"parts": [{"text": prompt}]}],
+      "generationConfig": {"response_mime_type": "application/json"}
+    };
+
+    var options = {
+      "method": "post",
+      "contentType": "application/json",
+      "payload": JSON.stringify(payload),
+      "muteHttpExceptions": true
+    };
+
+    var res = UrlFetchApp.fetch(url, options);
+    var jsonText = res.getContentText();
+    var parsed = JSON.parse(jsonText);
+    var replyText = parsed.candidates[0].content.parts[0].text;
+    return JSON.parse(replyText);
+  } catch (e) {
+    Logger.log("Erro no Gemini AI: " + e);
+    return null;
+  }
+}
+
+function handleList(sheet) {
+  var items = getActiveItemsList(sheet);
   return responseJSON({ success: true, count: items.length, items: items });
 }
+
 function handleAdd(sheet, item, user, userId) {
   if (!item) return responseJSON({ success: false, message: 'Nenhum item informado.' });
-  var cleanName = cleanItemName(item);
-  sheet.appendRow([cleanName, now(), user, userId, 'ATIVO', '', '', '']);
-  return responseJSON({ success: true, item: cleanName });
+  sheet.appendRow([item, now(), user, userId, 'ATIVO', '', '', '']);
+  return responseJSON({ success: true, item: item });
 }
+
 function handleRemove(itens, historico, item, user, userId) {
   if (!item) return responseJSON({ success: false, message: 'Nenhum item informado.' });
-  var data = itens.getDataRange().getValues(), targetClean = cleanItemName(item), date = now();
+  var data = itens.getDataRange().getValues(), target = item.toLowerCase().trim(), date = now();
   for (var i = data.length - 1; i >= 1; i--) {
-    var currentClean = data[i][0] ? cleanItemName(data[i][0]) : '';
-    if ((currentClean === targetClean || currentClean.indexOf(targetClean) !== -1 || targetClean.indexOf(currentClean) !== -1) && String(data[i][4]).toUpperCase() === 'ATIVO') {
+    var current = data[i][0] ? String(data[i][0]).toLowerCase().trim() : '';
+    if ((current === target || current.indexOf(target) !== -1 || target.indexOf(current) !== -1) && String(data[i][4]).toUpperCase() === 'ATIVO') {
       historico.appendRow([data[i][0], date, user, userId, data[i][1], data[i][2], data[i][3]]);
       itens.getRange(i + 1, 5, 1, 4).setValues([['REMOVIDO', date, user, userId]]);
       return responseJSON({ success: true, item: data[i][0] });

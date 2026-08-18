@@ -4,6 +4,13 @@ function getFamilyPin() {
   return String(pin).trim();
 }
 
+function cleanItemName(str) {
+  return String(str || '')
+    .toLowerCase()
+    .trim()
+    .replace(/^(o|a|os|as|do|da|dos|das|um|uma|uns|umas)\s+/i, '');
+}
+
 function doGet(e) {
   try {
     var p = e.parameter || {};
@@ -52,18 +59,19 @@ function handleList(sheet) {
 }
 function handleAdd(sheet, item, user, userId) {
   if (!item) return responseJSON({ success: false, message: 'Nenhum item informado.' });
-  sheet.appendRow([item, now(), user, userId, 'ATIVO', '', '', '']);
-  return responseJSON({ success: true, item: item });
+  var cleanName = cleanItemName(item);
+  sheet.appendRow([cleanName, now(), user, userId, 'ATIVO', '', '', '']);
+  return responseJSON({ success: true, item: cleanName });
 }
 function handleRemove(itens, historico, item, user, userId) {
   if (!item) return responseJSON({ success: false, message: 'Nenhum item informado.' });
-  var data = itens.getDataRange().getValues(), target = item.toLowerCase().trim(), date = now();
+  var data = itens.getDataRange().getValues(), targetClean = cleanItemName(item), date = now();
   for (var i = data.length - 1; i >= 1; i--) {
-    var current = data[i][0] ? String(data[i][0]).toLowerCase().trim() : '';
-    if (current === target && String(data[i][4]).toUpperCase() === 'ATIVO') {
+    var currentClean = data[i][0] ? cleanItemName(data[i][0]) : '';
+    if ((currentClean === targetClean || currentClean.indexOf(targetClean) !== -1 || targetClean.indexOf(currentClean) !== -1) && String(data[i][4]).toUpperCase() === 'ATIVO') {
       historico.appendRow([data[i][0], date, user, userId, data[i][1], data[i][2], data[i][3]]);
       itens.getRange(i + 1, 5, 1, 4).setValues([['REMOVIDO', date, user, userId]]);
-      return responseJSON({ success: true, item: item });
+      return responseJSON({ success: true, item: data[i][0] });
     }
   }
   return responseJSON({ success: false, message: 'Item não encontrado.' });

@@ -7,8 +7,8 @@ from ask_sdk_core.dispatch_components import AbstractRequestHandler, AbstractErr
 from ask_sdk_core.utils import is_request_type, is_intent_name
 
 # ======================================================================================
-// CONFIGURAÇÃO DE SEGURANÇA VIA ARQUIVO DE CONFIGURAÇÃO (config.json)
-// O arquivo config.json está no .gitignore e NUNCA é enviado para o GitHub público!
+# CONFIGURAÇÃO DE SEGURANÇA VIA ARQUIVO DE CONFIGURAÇÃO (config.json)
+# O arquivo config.json está no .gitignore e NUNCA é enviado para o GitHub público!
 # ======================================================================================
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'config.json')
 config = {}

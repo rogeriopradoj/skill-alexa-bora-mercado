@@ -24,16 +24,16 @@ TIMEOUT_SECONDS = 10
 
 def get_user_id(handler_input):
     try:
-        session = handler_input.request_envelope.session
-        if session and session.user and session.user.user_id:
-            return session.user.user_id
-    except AttributeError:
+        if handler_input.request_envelope.session and handler_input.request_envelope.session.user:
+            uid = handler_input.request_envelope.session.user.user_id
+            if uid: return uid
+    except Exception:
         pass
     try:
-        system = handler_input.request_envelope.context.system
-        if system and system.user and system.user.user_id:
-            return system.user.user_id
-    except AttributeError:
+        if handler_input.request_envelope.context and handler_input.request_envelope.context.system and handler_input.request_envelope.context.system.user:
+            uid = handler_input.request_envelope.context.system.user.user_id
+            if uid: return uid
+    except Exception:
         pass
     return ''
 
@@ -53,10 +53,11 @@ def call_script(action, item='', user='', user_id='', code=''):
     
     url = f"{GOOGLE_SCRIPT_URL}?{urllib.parse.urlencode(params)}"
     
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
     with urllib.request.urlopen(req, timeout=TIMEOUT_SECONDS) as response:
-        data = response.read().decode('utf-8')
-        return json.loads(data.lstrip('\ufeff'))
+        raw_bytes = response.read()
+        data = raw_bytes.decode('utf-8').lstrip('\ufeff')
+        return json.loads(data)
 
 def check_authorization(handler_input):
     user_id = get_user_id(handler_input)
@@ -80,12 +81,20 @@ class LaunchRequestHandler(AbstractRequestHandler):
         is_auth, user_name, user_id = check_authorization(handler_input)
         if not is_auth:
             speech = "Seu acesso ainda não está autorizado. Para se cadastrar, diga cadastrar código, seguido do código que recebeu do administrador da lista."
-            return handler_input.response_builder.speak(speech).response
+            return handler_input.response_builder.speak(speech).ask("Qual é o código de cadastro?").response
         
         speech = f"Bora Mercado JuRogerPi, {user_name}! Você pode dizer anota leite, dá baixa no leite, ou perguntar o que falta."
         return handler_input.response_builder.speak(speech).ask("O que você quer fazer?").response
 
-# 2. CadastrarUsuarioIntent Handler
+# 2. NavigateHomeIntent Handler (Dispositivos com tela como Echo Spot)
+class NavigateHomeIntentHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return is_intent_name("AMAZON.NavigateHomeIntent")(handler_input)
+    
+    def handle(self, handler_input):
+        return LaunchRequestHandler().handle(handler_input)
+
+# 3. CadastrarUsuarioIntent Handler
 class CadastrarUsuarioIntentHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
         return is_intent_name("CadastrarUsuarioIntent")(handler_input)
@@ -93,8 +102,8 @@ class CadastrarUsuarioIntentHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         user_id = get_user_id(handler_input)
         slots = handler_input.request_envelope.request.intent.slots
-        code_slot = slots.get('codigo')
-        code = code_slot.value.strip() if code_slot and code_slot.value else ''
+        code_slot = slots.get('codigo') if slots else None
+        code = str(code_slot.value).strip() if code_slot and code_slot.value is not None else ''
         
         if not code:
             return handler_input.response_builder.speak("Diga o código de cadastro.").ask("Qual é o código?").response
@@ -110,7 +119,7 @@ class CadastrarUsuarioIntentHandler(AbstractRequestHandler):
             print(f"Erro no cadastro: {e}")
             return handler_input.response_builder.speak("Não consegui concluir o cadastro agora.").response
 
-# 3. AdicionarItemIntent Handler
+# 4. AdicionarItemIntent Handler
 class AdicionarItemIntentHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
         return is_intent_name("AdicionarItemIntent")(handler_input)
@@ -119,11 +128,11 @@ class AdicionarItemIntentHandler(AbstractRequestHandler):
         is_auth, user_name, user_id = check_authorization(handler_input)
         if not is_auth:
             speech = "Seu acesso ainda não está autorizado. Para se cadastrar, diga cadastrar código, seguido do código que recebeu do administrador da lista."
-            return handler_input.response_builder.speak(speech).response
+            return handler_input.response_builder.speak(speech).ask("Qual é o código de cadastro?").response
         
         slots = handler_input.request_envelope.request.intent.slots
-        item_slot = slots.get('item')
-        item = item_slot.value.strip() if item_slot and item_slot.value else ''
+        item_slot = slots.get('item') if slots else None
+        item = str(item_slot.value).strip() if item_slot and item_slot.value is not None else ''
         
         if not item:
             return handler_input.response_builder.speak("Não entendi qual item você quer anotar.").ask("Qual item?").response
@@ -139,7 +148,7 @@ class AdicionarItemIntentHandler(AbstractRequestHandler):
             print(f"Erro ao adicionar: {e}")
             return handler_input.response_builder.speak("Não consegui acessar a planilha agora.").response
 
-# 4. RemoverItemIntent Handler
+# 5. RemoverItemIntent Handler
 class RemoverItemIntentHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
         return is_intent_name("RemoverItemIntent")(handler_input)
@@ -147,12 +156,12 @@ class RemoverItemIntentHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         is_auth, user_name, user_id = check_authorization(handler_input)
         if not is_auth:
-            speech = "Seu acesso ainda não está autorizado. Para se cadastrar, diga cadastrar código..."
-            return handler_input.response_builder.speak(speech).response
+            speech = "Seu acesso ainda não está autorizado. Para se cadastrar, diga cadastrar código, seguido do código que recebeu do administrador da lista."
+            return handler_input.response_builder.speak(speech).ask("Qual é o código de cadastro?").response
         
         slots = handler_input.request_envelope.request.intent.slots
-        item_slot = slots.get('item')
-        item = item_slot.value.strip() if item_slot and item_slot.value else ''
+        item_slot = slots.get('item') if slots else None
+        item = str(item_slot.value).strip() if item_slot and item_slot.value is not None else ''
         
         if not item:
             return handler_input.response_builder.speak("Não entendi qual item você quer marcar como comprado.").ask("Qual item?").response
@@ -168,7 +177,7 @@ class RemoverItemIntentHandler(AbstractRequestHandler):
             print(f"Erro ao remover: {e}")
             return handler_input.response_builder.speak("Não consegui acessar a planilha agora.").response
 
-# 5. ListarItensIntent Handler
+# 6. ListarItensIntent Handler
 class ListarItensIntentHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
         return is_intent_name("ListarItensIntent")(handler_input)
@@ -176,8 +185,8 @@ class ListarItensIntentHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         is_auth, user_name, user_id = check_authorization(handler_input)
         if not is_auth:
-            speech = "Seu acesso ainda não está autorizado. Para se cadastrar, diga cadastrar código..."
-            return handler_input.response_builder.speak(speech).response
+            speech = "Seu acesso ainda não está autorizado. Para se cadastrar, diga cadastrar código, seguido do código que recebeu do administrador da lista."
+            return handler_input.response_builder.speak(speech).ask("Qual é o código de cadastro?").response
         
         try:
             res = call_script('list')
@@ -191,7 +200,7 @@ class ListarItensIntentHandler(AbstractRequestHandler):
             print(f"Erro ao listar: {e}")
             return handler_input.response_builder.speak("Não consegui consultar a lista agora.").response
 
-# 6. HelpIntent Handler
+# 7. HelpIntent Handler
 class HelpIntentHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
         return is_intent_name("AMAZON.HelpIntent")(handler_input)
@@ -200,7 +209,7 @@ class HelpIntentHandler(AbstractRequestHandler):
         text = "Você pode dizer anota leite, dá baixa no leite, ou perguntar o que falta."
         return handler_input.response_builder.speak(text).ask(text).response
 
-# 7. CancelOrStopIntent Handler
+# 8. CancelOrStopIntent Handler
 class CancelOrStopIntentHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
         return is_intent_name("AMAZON.CancelIntent")(handler_input) or is_intent_name("AMAZON.StopIntent")(handler_input)
@@ -208,7 +217,7 @@ class CancelOrStopIntentHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         return handler_input.response_builder.speak("Até mais.").response
 
-# 8. FallbackIntent Handler
+# 9. FallbackIntent Handler
 class FallbackIntentHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
         return is_intent_name("AMAZON.FallbackIntent")(handler_input)
@@ -217,7 +226,7 @@ class FallbackIntentHandler(AbstractRequestHandler):
         speech = "Não entendi. Diga anota leite, dá baixa no leite, ou o que falta."
         return handler_input.response_builder.speak(speech).ask("O que você quer fazer?").response
 
-# 9. SessionEndedRequestHandler
+# 10. SessionEndedRequestHandler
 class SessionEndedRequestHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
         return is_request_type("SessionEndedRequest")(handler_input)
@@ -225,18 +234,19 @@ class SessionEndedRequestHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         return handler_input.response_builder.response
 
-# 10. CatchAllExceptionHandler
+# 11. CatchAllExceptionHandler
 class CatchAllExceptionHandler(AbstractErrorHandler):
     def can_handle(self, handler_input, exception):
         return True
     
     def handle(self, handler_input, exception):
-        print(f"Erro capturado: {exception}")
-        speech = "Ocorreu um erro. Tente novamente."
+        print(f"Erro capturado no ExceptionHandler: {exception}")
+        speech = "Ocorreu um erro ao processar seu pedido. Tente novamente em instantes."
         return handler_input.response_builder.speak(speech).ask("Tente novamente.").response
 
 sb = SkillBuilder()
 sb.add_request_handler(LaunchRequestHandler())
+sb.add_request_handler(NavigateHomeIntentHandler())
 sb.add_request_handler(CadastrarUsuarioIntentHandler())
 sb.add_request_handler(AdicionarItemIntentHandler())
 sb.add_request_handler(RemoverItemIntentHandler())

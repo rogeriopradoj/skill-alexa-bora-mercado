@@ -95,7 +95,8 @@ const CadastrarUsuarioIntentHandler = {
     canHandle(i) { return Alexa.getRequestType(i.requestEnvelope) === 'IntentRequest' && Alexa.getIntentName(i.requestEnvelope) === 'CadastrarUsuarioIntent'; },
     async handle(i) {
         const userId = getUserId(i);
-        const code = Alexa.getSlotValue(i.requestEnvelope, 'codigo')?.trim();
+        const rawCode = Alexa.getSlotValue(i.requestEnvelope, 'codigo');
+        const code = rawCode !== undefined && rawCode !== null ? String(rawCode).trim() : '';
         if (!code) return i.responseBuilder.speak('Diga o código de cadastro.').reprompt('Qual é o código?').getResponse();
         try {
             const result = await callScript('register', '', getTemporaryName(userId), userId, code);
@@ -108,7 +109,8 @@ const AdicionarItemIntentHandler = {
     canHandle(i) { return Alexa.getRequestType(i.requestEnvelope) === 'IntentRequest' && Alexa.getIntentName(i.requestEnvelope) === 'AdicionarItemIntent'; },
     async handle(i) {
         const auth = await checkAuthorization(i); if (!auth.isAuthorized) return denied(i);
-        const item = Alexa.getSlotValue(i.requestEnvelope, 'item')?.trim();
+        const rawItem = Alexa.getSlotValue(i.requestEnvelope, 'item');
+        const item = rawItem !== undefined && rawItem !== null ? String(rawItem).trim() : '';
         if (!item) return i.responseBuilder.speak('Não entendi qual item você quer anotar.').reprompt('Qual item?').getResponse();
         try {
             const result = await callScript('add', item, auth.user, auth.userId);
@@ -121,7 +123,8 @@ const RemoverItemIntentHandler = {
     canHandle(i) { return Alexa.getRequestType(i.requestEnvelope) === 'IntentRequest' && Alexa.getIntentName(i.requestEnvelope) === 'RemoverItemIntent'; },
     async handle(i) {
         const auth = await checkAuthorization(i); if (!auth.isAuthorized) return denied(i);
-        const item = Alexa.getSlotValue(i.requestEnvelope, 'item')?.trim();
+        const rawItem = Alexa.getSlotValue(i.requestEnvelope, 'item');
+        const item = rawItem !== undefined && rawItem !== null ? String(rawItem).trim() : '';
         if (!item) return i.responseBuilder.speak('Não entendi qual item você quer marcar como comprado.').reprompt('Qual item?').getResponse();
         try {
             const result = await callScript('remove', item, auth.user, auth.userId);

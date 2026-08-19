@@ -1,5 +1,5 @@
 /**
- * Google Apps Script - API REST com Inteligência Artificial (Gemini 1.5/2.5 Flash)
+ * Google Apps Script - API REST com Inteligência Artificial (Gemini 3.6 Flash)
  * Planilha: "Bora Mercado"
  */
 
@@ -90,7 +90,7 @@ function getActiveItemsList(sheet) {
 }
 
 function processWithGeminiAI(apiKey, actionHint, userInput, activeItems) {
-  var models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash'];
+  var models = ['gemini-3.6-flash', 'gemini-1.5-flash-latest', 'gemini-2.5-flash'];
   for (var m = 0; m < models.length; m++) {
     try {
       var modelName = models[m];

@@ -14,10 +14,9 @@ function getGeminiApiKey() {
   return key ? String(key).trim() : '';
 }
 
-// Função sem try/catch para FORÇAR o Google Apps Script a exibir a janela de autorização OAuth2
 function authorizeUrlFetch() {
   var res = UrlFetchApp.fetch('https://generativelanguage.googleapis.com/v1beta/models?key=' + getGeminiApiKey());
-  Logger.log(" Autorização concedida com sucesso! Resposta: " + res.getResponseCode());
+  Logger.log("Autorização concedida com sucesso! Resposta: " + res.getResponseCode());
 }
 
 function testGeminiAI() {
@@ -91,39 +90,51 @@ function getActiveItemsList(sheet) {
 }
 
 function processWithGeminiAI(apiKey, actionHint, userInput, activeItems) {
-  try {
-    var url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + apiKey;
-    var prompt = "Você é um assistente de inteligência artificial de lista de supermercado familiar.\n" +
-      "Itens atualmente ATIVOS na lista de compras: " + JSON.stringify(activeItems) + "\n" +
-      "Ação sugerida da Alexa: '" + actionHint + "'\n" +
-      "Frase ou item dito pelo usuário: '" + userInput + "'\n\n" +
-      "Sua tarefa:\n" +
-      "1. Se o usuário quiser ADICIONAR ou ANOTAR algo, identifique o nome limpo e singular do item (ex: 'leite', 'pão', 'cachorro') e retorne {\"action\": \"add\", \"item\": \"nome_do_item\"}.\n" +
-      "2. Se o usuário quiser REMOVER, RISCAR, DAR BAIXA ou COMPROU algo (ex: 'comprei a ração do bicho', 'tira o cão', 'risca o leite'), identifique qual item da lista ativa corresponde (ex: 'cachorro') e retorne {\"action\": \"remove\", \"item\": \"item_correspondente_da_lista\"}.\n" +
-      "3. Se o usuário quiser CONSULTAR o que falta, retorne {\"action\": \"list\", \"item\": \"\"}.\n" +
-      "Responda EXCLUSIVAMENTE um objeto JSON válido no formato {\"action\": \"...\", \"item\": \"...\"} sem marcações markdown extra.";
+  var models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash'];
+  for (var m = 0; m < models.length; m++) {
+    try {
+      var modelName = models[m];
+      var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent?key=' + apiKey;
+      var prompt = "Você é um assistente de inteligência artificial de lista de supermercado familiar.\n" +
+        "Itens atualmente ATIVOS na lista de compras: " + JSON.stringify(activeItems) + "\n" +
+        "Ação sugerida da Alexa: '" + actionHint + "'\n" +
+        "Frase ou item dito pelo usuário: '" + userInput + "'\n\n" +
+        "Sua tarefa:\n" +
+        "1. Se o usuário quiser ADICIONAR ou ANOTAR algo, identifique o nome limpo e singular do item (ex: 'leite', 'pão', 'cachorro') e retorne {\"action\": \"add\", \"item\": \"nome_do_item\"}.\n" +
+        "2. Se o usuário quiser REMOVER, RISCAR, DAR BAIXA ou COMPROU algo (ex: 'comprei a ração do bicho', 'tira o cão', 'risca o leite'), identifique qual item da lista ativa corresponde (ex: 'cachorro') e retorne {\"action\": \"remove\", \"item\": \"item_correspondente_da_lista\"}.\n" +
+        "3. Se o usuário quiser CONSULTAR o que falta, retorne {\"action\": \"list\", \"item\": \"\"}.\n" +
+        "Responda EXCLUSIVAMENTE um objeto JSON válido no formato {\"action\": \"...\", \"item\": \"...\"} sem marcações markdown extra.";
 
-    var payload = {
-      "contents": [{"parts": [{"text": prompt}]}],
-      "generationConfig": {"response_mime_type": "application/json"}
-    };
+      var payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"response_mime_type": "application/json"}
+      };
 
-    var options = {
-      "method": "post",
-      "contentType": "application/json",
-      "payload": JSON.stringify(payload),
-      "muteHttpExceptions": true
-    };
+      var options = {
+        "method": "post",
+        "contentType": "application/json",
+        "payload": JSON.stringify(payload),
+        "muteHttpExceptions": true
+      };
 
-    var res = UrlFetchApp.fetch(url, options);
-    var jsonText = res.getContentText();
-    var parsed = JSON.parse(jsonText);
-    var replyText = parsed.candidates[0].content.parts[0].text;
-    return JSON.parse(replyText);
-  } catch (e) {
-    Logger.log("Erro no Gemini AI: " + e);
-    return null;
+      var res = UrlFetchApp.fetch(url, options);
+      var jsonText = res.getContentText();
+      var parsed = JSON.parse(jsonText);
+      
+      if (parsed.error) {
+        Logger.log("Aviso no modelo " + modelName + ": " + JSON.stringify(parsed.error));
+        continue;
+      }
+      
+      if (parsed.candidates && parsed.candidates.length > 0 && parsed.candidates[0].content) {
+        var replyText = parsed.candidates[0].content.parts[0].text;
+        return JSON.parse(replyText);
+      }
+    } catch (e) {
+      Logger.log("Erro no Gemini AI com " + models[m] + ": " + e);
+    }
   }
+  return null;
 }
 
 function handleList(sheet) {

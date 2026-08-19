@@ -1,20 +1,11 @@
 /**
  * Google Apps Script - API REST com IA Gemini 3.6 Flash
  * Planilha: "Bora Mercado"
+ *
+ * Estrutura das Abas:
+ * 1. "Itens": [Item, Data Inclusão, Quem Incluiu, User ID Alexa (Incluiu)] -> Apenas 4 Colunas
+ * 2. "Historico_Removidos": [Item, Data Remoção, Quem Apagou, User ID Alexa (Apagou), Data Inclusão, Quem Incluiu, User ID Alexa (Incluiu)] -> 7 Colunas
  */
-
-function getFamilyPin() {
-  var pin = PropertiesService.getScriptProperties().getProperty('FAMILY_PIN');
-  if (!pin) throw new Error('A propriedade FAMILY_PIN não foi configurada.');
-  return String(pin).trim();
-}
-
-function parseCodeDigits(str) {
-  var s = String(str || '').toLowerCase().trim();
-  var digitsOnly = s.replace(/\D/g, '');
-  if (digitsOnly.length > 0) return digitsOnly;
-  return s;
-}
 
 function getGeminiApiKey() {
   var key = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
@@ -48,9 +39,6 @@ function doGet(e) {
     var itens = getOrCreateSheet(ss, 'Itens');
     var historico = getOrCreateSheet(ss, 'Historico_Removidos');
     ensureItens(itens); ensureHistorico(historico);
-
-    if (action === 'authorize') return handleAuthorize(ss, userId);
-    if (action === 'register') return handleRegister(ss, p.code || '', user, userId);
 
     var apiKey = getGeminiApiKey();
     if (apiKey && (action === 'add' || action === 'remove' || item)) {
@@ -169,49 +157,6 @@ function handleRemove(itens, historico, item, user, userId) {
     }
   }
   return responseJSON({ success: false, message: 'Item não encontrado.' });
-}
-
-function getAuthorizedUsersSheet(ss) {
-  var sheet = getOrCreateSheet(ss, 'Usuarios_Autorizados');
-  if (sheet.getLastRow() === 0) sheet.appendRow(['User ID Alexa', 'Nome', 'Data de Cadastro', 'Status']);
-  sheet.getRange(1, 1, 1, 4).setFontWeight('bold');
-  return sheet;
-}
-
-function handleAuthorize(ss, userId) {
-  if (!userId) return responseJSON({ success: false });
-  var data = getAuthorizedUsersSheet(ss).getDataRange().getValues();
-  for (var i = 1; i < data.length; i++) if (String(data[i][0]).trim() === userId && String(data[i][3]).toUpperCase() === 'ATIVO') return responseJSON({ success: true, user: data[i][1] || 'Usuário' });
-  return responseJSON({ success: false });
-}
-
-function handleRegister(ss, code, user, userId) {
-  try {
-    if (!userId) return responseJSON({ success: false, message: 'User ID não fornecido.' });
-    var cleanCode = parseCodeDigits(code);
-    var pinCode = parseCodeDigits(getFamilyPin());
-    
-    if (cleanCode !== pinCode) {
-      Logger.log("PIN incorreto. Recebido: '" + cleanCode + "' (original: '" + code + "'), Esperado: '" + pinCode + "'");
-      return responseJSON({ success: false, message: 'Código PIN incorreto.' });
-    }
-    
-    var sheet = getAuthorizedUsersSheet(ss);
-    var data = sheet.getDataRange().getValues();
-    var currentDate = now();
-    
-    for (var i = 1; i < data.length; i++) {
-      if (String(data[i][0]).trim() === userId) {
-        sheet.getRange(i + 1, 2, 1, 3).setValues([[user, currentDate, 'ATIVO']]);
-        return responseJSON({ success: true });
-      }
-    }
-    sheet.appendRow([userId, user, currentDate, 'ATIVO']);
-    return responseJSON({ success: true });
-  } catch (e) {
-    Logger.log("Erro no handleRegister: " + e);
-    return responseJSON({ success: false, error: e.toString() });
-  }
 }
 
 function responseJSON(obj) { return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }

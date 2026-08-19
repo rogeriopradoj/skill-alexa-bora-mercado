@@ -20,23 +20,6 @@
           "samples": []
         },
         {
-          "name": "CadastrarUsuarioIntent",
-          "slots": [
-            {
-              "name": "codigo",
-              "type": "AMAZON.NUMBER"
-            }
-          ],
-          "samples": [
-            "cadastrar código {codigo}",
-            "cadastrar o código {codigo}",
-            "meu código é {codigo}",
-            "código {codigo}",
-            "cadastrar {codigo}",
-            "senha {codigo}"
-          ]
-        },
-        {
           "name": "AdicionarItemIntent",
           "slots": [
             {

@@ -10,11 +10,11 @@ function getUserId(handlerInput) {
     return handlerInput.requestEnvelope?.session?.user?.userId || handlerInput.requestEnvelope?.context?.System?.user?.userId || '';
 }
 
-function getTemporaryName(userId) {
+function getUserName(userId) {
     return `User_${userId ? userId.slice(-6) : 'Desconhecido'}`;
 }
 
-function callScript(action, item = '', user = '', userId = '', code = '') {
+function callScript(action, item = '', user = '', userId = '') {
     if (!GOOGLE_SCRIPT_URL) return Promise.reject(new Error('GOOGLE_SCRIPT_URL não configurada no config.json.'));
     let initialUrl;
     try {
@@ -23,7 +23,6 @@ function callScript(action, item = '', user = '', userId = '', code = '') {
         if (item) url.searchParams.set('item', item);
         if (user) url.searchParams.set('user', user);
         if (userId) url.searchParams.set('userId', userId);
-        if (code) url.searchParams.set('code', code);
         initialUrl = url.toString();
     } catch (error) { return Promise.reject(new Error(`GOOGLE_SCRIPT_URL inválida: ${error.message}`)); }
 
@@ -55,32 +54,11 @@ function callScript(action, item = '', user = '', userId = '', code = '') {
     });
 }
 
-async function checkAuthorization(handlerInput) {
-    const userId = getUserId(handlerInput);
-    if (!userId) return { isAuthorized: false, user: 'Não Autorizado', userId: '' };
-    try {
-        const result = await callScript('authorize', '', '', userId);
-        return { isAuthorized: result.success === true, user: result.user || getTemporaryName(userId), userId };
-    } catch (error) {
-        console.error('Erro ao consultar autorização:', error);
-        return { isAuthorized: false, user: getTemporaryName(userId), userId };
-    }
-}
-
-function denied(handlerInput) {
-    return handlerInput.responseBuilder
-        .speak('Seu acesso ainda não está autorizado. Para se cadastrar, diga cadastrar código, seguido do código que recebeu do administrador da lista.')
-        .reprompt('Qual é o código de cadastro?')
-        .getResponse();
-}
-
 const LaunchRequestHandler = {
     canHandle(i) { return Alexa.getRequestType(i.requestEnvelope) === 'LaunchRequest'; },
-    async handle(i) {
-        const auth = await checkAuthorization(i);
-        if (!auth.isAuthorized) return denied(i);
+    handle(i) {
         return i.responseBuilder
-            .speak(`Bora Mercado JuRogerPi, ${auth.user}. Você pode dizer anota leite, dá baixa no leite, ou perguntar o que falta.`)
+            .speak(`Bora Mercado JuRogerPi! Você pode dizer anota leite, dá baixa no leite, ou perguntar o que falta.`)
             .reprompt('O que você quer fazer?')
             .getResponse();
     }
@@ -88,32 +66,19 @@ const LaunchRequestHandler = {
 
 const NavigateHomeIntentHandler = {
     canHandle(i) { return Alexa.getRequestType(i.requestEnvelope) === 'IntentRequest' && Alexa.getIntentName(i.requestEnvelope) === 'AMAZON.NavigateHomeIntent'; },
-    async handle(i) { return LaunchRequestHandler.handle(i); }
-};
-
-const CadastrarUsuarioIntentHandler = {
-    canHandle(i) { return Alexa.getRequestType(i.requestEnvelope) === 'IntentRequest' && Alexa.getIntentName(i.requestEnvelope) === 'CadastrarUsuarioIntent'; },
-    async handle(i) {
-        const userId = getUserId(i);
-        const rawCode = Alexa.getSlotValue(i.requestEnvelope, 'codigo');
-        const code = rawCode !== undefined && rawCode !== null ? String(rawCode).trim() : '';
-        if (!code) return i.responseBuilder.speak('Diga o código de cadastro.').reprompt('Qual é o código?').getResponse();
-        try {
-            const result = await callScript('register', '', getTemporaryName(userId), userId, code);
-            return i.responseBuilder.speak(result.success ? 'Cadastro confirmado. Agora você pode usar o Bora Mercado JuRogerPi.' : 'Código inválido. Seu cadastro não foi realizado.').getResponse();
-        } catch (error) { console.error('Erro no cadastro:', error); return i.responseBuilder.speak('Não consegui concluir o cadastro agora.').getResponse(); }
-    }
+    handle(i) { return LaunchRequestHandler.handle(i); }
 };
 
 const AdicionarItemIntentHandler = {
     canHandle(i) { return Alexa.getRequestType(i.requestEnvelope) === 'IntentRequest' && Alexa.getIntentName(i.requestEnvelope) === 'AdicionarItemIntent'; },
     async handle(i) {
-        const auth = await checkAuthorization(i); if (!auth.isAuthorized) return denied(i);
+        const userId = getUserId(i);
+        const userName = getUserName(userId);
         const rawItem = Alexa.getSlotValue(i.requestEnvelope, 'item');
         const item = rawItem !== undefined && rawItem !== null ? String(rawItem).trim() : '';
         if (!item) return i.responseBuilder.speak('Não entendi qual item você quer anotar.').reprompt('Qual item?').getResponse();
         try {
-            const result = await callScript('add', item, auth.user, auth.userId);
+            const result = await callScript('add', item, userName, userId);
             return i.responseBuilder.speak(result.success ? `Anotado: ${item}.` : `Não consegui anotar ${item}.`).reprompt('Quer anotar mais alguma coisa?').getResponse();
         } catch (error) { console.error('Erro ao adicionar:', error); return i.responseBuilder.speak('Não consegui acessar a planilha agora.').getResponse(); }
     }
@@ -122,12 +87,13 @@ const AdicionarItemIntentHandler = {
 const RemoverItemIntentHandler = {
     canHandle(i) { return Alexa.getRequestType(i.requestEnvelope) === 'IntentRequest' && Alexa.getIntentName(i.requestEnvelope) === 'RemoverItemIntent'; },
     async handle(i) {
-        const auth = await checkAuthorization(i); if (!auth.isAuthorized) return denied(i);
+        const userId = getUserId(i);
+        const userName = getUserName(userId);
         const rawItem = Alexa.getSlotValue(i.requestEnvelope, 'item');
         const item = rawItem !== undefined && rawItem !== null ? String(rawItem).trim() : '';
         if (!item) return i.responseBuilder.speak('Não entendi qual item você quer marcar como comprado.').reprompt('Qual item?').getResponse();
         try {
-            const result = await callScript('remove', item, auth.user, auth.userId);
+            const result = await callScript('remove', item, userName, userId);
             return i.responseBuilder.speak(result.success ? `Pronto, dei baixa em ${item}.` : `Não encontrei ${item} na lista atual.`).getResponse();
         } catch (error) { console.error('Erro ao remover:', error); return i.responseBuilder.speak('Não consegui acessar a planilha agora.').getResponse(); }
     }
@@ -136,7 +102,6 @@ const RemoverItemIntentHandler = {
 const ListarItensIntentHandler = {
     canHandle(i) { return Alexa.getRequestType(i.requestEnvelope) === 'IntentRequest' && Alexa.getIntentName(i.requestEnvelope) === 'ListarItensIntent'; },
     async handle(i) {
-        const auth = await checkAuthorization(i); if (!auth.isAuthorized) return denied(i);
         try {
             const result = await callScript('list');
             const items = Array.isArray(result.items) ? result.items : [];
@@ -147,7 +112,7 @@ const ListarItensIntentHandler = {
 
 const HelpIntentHandler = {
     canHandle(i) { return Alexa.getRequestType(i.requestEnvelope) === 'IntentRequest' && Alexa.getIntentName(i.requestEnvelope) === 'AMAZON.HelpIntent'; },
-    async handle(i) {
+    handle(i) {
         const text = 'Você pode dizer anota leite, dá baixa no leite, ou perguntar o que falta.';
         return i.responseBuilder.speak(text).reprompt(text).getResponse();
     }
@@ -180,7 +145,6 @@ exports.handler = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
         NavigateHomeIntentHandler,
-        CadastrarUsuarioIntentHandler,
         AdicionarItemIntentHandler,
         RemoverItemIntentHandler,
         ListarItensIntentHandler,

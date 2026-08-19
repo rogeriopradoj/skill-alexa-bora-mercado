@@ -14,6 +14,17 @@ function getGeminiApiKey() {
   return key ? String(key).trim() : '';
 }
 
+function testGeminiAI() {
+  var apiKey = getGeminiApiKey();
+  Logger.log("Chave API encontrada: " + (apiKey ? (apiKey.substring(0, 8) + "...") : "NENHUMA CHAVE ENCONTRADA!"));
+  if (!apiKey) {
+    Logger.log("⚠️ ATENÇÃO: A propriedade GEMINI_API_KEY não foi configurada em Propriedades do Script!");
+    return;
+  }
+  var res = processWithGeminiAI(apiKey, 'remove', 'comprei o rango do bicho', ['cachorro', 'açúcar']);
+  Logger.log("🤖 RESPOSTA RETORNADA PELO GEMINI IA: " + JSON.stringify(res));
+}
+
 function doGet(e) {
   try {
     var p = e.parameter || {};
@@ -29,7 +40,6 @@ function doGet(e) {
     if (action === 'authorize') return handleAuthorize(ss, userId);
     if (action === 'register') return handleRegister(ss, p.code || '', user, userId);
 
-    // Se houver chave do Gemini configurada e um item/frase for enviado, usamos o Gemini AI
     var apiKey = getGeminiApiKey();
     if (apiKey && (action === 'add' || action === 'remove' || item)) {
       var aiResult = processWithGeminiAI(apiKey, action, item, getActiveItemsList(itens));

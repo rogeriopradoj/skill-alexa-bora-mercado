@@ -1,17 +1,19 @@
 /**
  * Google Apps Script - API REST com IA Gemini 3.6 Flash
  * Planilha: "Bora Mercado"
- *
- * Estrutura das Abas:
- * 1. "Itens": [Item, Data Inclusão, Quem Incluiu, User ID Alexa (Incluiu)] -> Apenas 4 Colunas
- * 2. "Historico_Removidos": [Item, Data Remoção, Quem Apagou, User ID Alexa (Apagou), Data Inclusão, Quem Incluiu, User ID Alexa (Incluiu)] -> 7 Colunas
- * 3. "Usuarios_Autorizados": [User ID Alexa, Nome, Data de Cadastro, Status] -> 4 Colunas
  */
 
 function getFamilyPin() {
   var pin = PropertiesService.getScriptProperties().getProperty('FAMILY_PIN');
   if (!pin) throw new Error('A propriedade FAMILY_PIN não foi configurada.');
   return String(pin).trim();
+}
+
+function parseCodeDigits(str) {
+  var s = String(str || '').toLowerCase().trim();
+  var digitsOnly = s.replace(/\D/g, '');
+  if (digitsOnly.length > 0) return digitsOnly;
+  return s;
 }
 
 function getGeminiApiKey() {
@@ -155,18 +157,14 @@ function handleRemove(itens, historico, item, user, userId) {
   var data = itens.getDataRange().getValues(), target = item.toLowerCase().trim(), date = now();
   for (var i = data.length - 1; i >= 1; i--) {
     var current = data[i][0] ? String(data[i][0]).toLowerCase().trim() : '';
-    if (current === target || current.indexOf(target) !== -1 || target.indexOf(current) !== -1) {
+    if ((current === target || current.indexOf(target) !== -1 || target.indexOf(current) !== -1)) {
       var itemOriginal = data[i][0];
       var dataInclusao = data[i][1] || 'N/I';
       var quemIncluiu = data[i][2] || 'N/I';
       var userIdIncluiu = data[i][3] || 'N/I';
       
-      // 1. Grava no Histórico de Removidos com Governança Completa
       historico.appendRow([itemOriginal, date, user, userId, dataInclusao, quemIncluiu, userIdIncluiu]);
-      
-      // 2. EXCLUI fisicamente a linha da aba Itens
       itens.deleteRow(i + 1);
-      
       return responseJSON({ success: true, item: itemOriginal });
     }
   }
@@ -179,17 +177,41 @@ function getAuthorizedUsersSheet(ss) {
   sheet.getRange(1, 1, 1, 4).setFontWeight('bold');
   return sheet;
 }
+
 function handleAuthorize(ss, userId) {
   if (!userId) return responseJSON({ success: false });
   var data = getAuthorizedUsersSheet(ss).getDataRange().getValues();
   for (var i = 1; i < data.length; i++) if (String(data[i][0]).trim() === userId && String(data[i][3]).toUpperCase() === 'ATIVO') return responseJSON({ success: true, user: data[i][1] || 'Usuário' });
   return responseJSON({ success: false });
 }
+
 function handleRegister(ss, code, user, userId) {
-  if (!userId || String(code).trim() !== getFamilyPin()) return responseJSON({ success: false });
-  var sheet = getAuthorizedUsersSheet(ss), data = sheet.getDataRange().getValues(), date = now();
-  for (var i = 1; i < data.length; i++) if (String(data[i][0]).trim() === userId) { sheet.getRange(i + 1, 2, 1, 3).setValues([[user, date, 'ATIVO']]); return responseJSON({ success: true }); }
-  sheet.appendRow([userId, user, date, 'ATIVO']);
-  return responseJSON({ success: true });
+  try {
+    if (!userId) return responseJSON({ success: false, message: 'User ID não fornecido.' });
+    var cleanCode = parseCodeDigits(code);
+    var pinCode = parseCodeDigits(getFamilyPin());
+    
+    if (cleanCode !== pinCode) {
+      Logger.log("PIN incorreto. Recebido: '" + cleanCode + "' (original: '" + code + "'), Esperado: '" + pinCode + "'");
+      return responseJSON({ success: false, message: 'Código PIN incorreto.' });
+    }
+    
+    var sheet = getAuthorizedUsersSheet(ss);
+    var data = sheet.getDataRange().getValues();
+    var currentDate = now();
+    
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][0]).trim() === userId) {
+        sheet.getRange(i + 1, 2, 1, 3).setValues([[user, currentDate, 'ATIVO']]);
+        return responseJSON({ success: true });
+      }
+    }
+    sheet.appendRow([userId, user, currentDate, 'ATIVO']);
+    return responseJSON({ success: true });
+  } catch (e) {
+    Logger.log("Erro no handleRegister: " + e);
+    return responseJSON({ success: false, error: e.toString() });
+  }
 }
+
 function responseJSON(obj) { return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }

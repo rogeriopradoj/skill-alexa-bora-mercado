@@ -14,6 +14,12 @@ function getGeminiApiKey() {
   return key ? String(key).trim() : '';
 }
 
+// Função sem try/catch para FORÇAR o Google Apps Script a exibir a janela de autorização OAuth2
+function authorizeUrlFetch() {
+  var res = UrlFetchApp.fetch('https://generativelanguage.googleapis.com/v1beta/models?key=' + getGeminiApiKey());
+  Logger.log(" Autorização concedida com sucesso! Resposta: " + res.getResponseCode());
+}
+
 function testGeminiAI() {
   var apiKey = getGeminiApiKey();
   Logger.log("Chave API encontrada: " + (apiKey ? (apiKey.substring(0, 8) + "...") : "NENHUMA CHAVE ENCONTRADA!"));

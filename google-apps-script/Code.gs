@@ -1,6 +1,11 @@
 /**
- * Google Apps Script - API REST com Inteligência Artificial (Gemini 3.6 Flash)
+ * Google Apps Script - API REST com IA Gemini 3.6 Flash
  * Planilha: "Bora Mercado"
+ *
+ * Estrutura das Abas:
+ * 1. "Itens": [Item, Data Inclusão, Quem Incluiu, User ID Alexa (Incluiu)] -> Apenas 4 Colunas
+ * 2. "Historico_Removidos": [Item, Data Remoção, Quem Apagou, User ID Alexa (Apagou), Data Inclusão, Quem Incluiu, User ID Alexa (Incluiu)] -> 7 Colunas
+ * 3. "Usuarios_Autorizados": [User ID Alexa, Nome, Data de Cadastro, Status] -> 4 Colunas
  */
 
 function getFamilyPin() {
@@ -63,29 +68,26 @@ function doGet(e) {
 }
 
 function getOrCreateSheet(ss, name) { return ss.getSheetByName(name) || ss.insertSheet(name); }
+
 function ensureItens(sheet) {
-  var h = ['Item', 'Data Inclusão', 'Quem Incluiu', 'User ID Alexa (Incluiu)', 'Status', 'Data Remoção', 'Quem Apagou', 'User ID Alexa (Apagou)'];
-  if (sheet.getMaxColumns() < 8) sheet.insertColumnsAfter(sheet.getMaxColumns(), 8 - sheet.getMaxColumns());
-  sheet.getRange(1, 1, 1, 8).setValues([h]).setFontWeight('bold');
-  var last = sheet.getLastRow();
-  if (last > 1) { var status = sheet.getRange(2, 5, last - 1, 1).getValues(); for (var i = 0; i < status.length; i++) if (!status[i][0]) status[i][0] = 'ATIVO'; sheet.getRange(2, 5, last - 1, 1).setValues(status); }
+  var h = ['Item', 'Data Inclusão', 'Quem Incluiu', 'User ID Alexa (Incluiu)'];
+  sheet.getRange(1, 1, 1, 4).setValues([h]).setFontWeight('bold');
 }
+
 function ensureHistorico(sheet) {
   var h = ['Item', 'Data Remoção', 'Quem Apagou', 'User ID Alexa (Apagou)', 'Data Inclusão', 'Quem Incluiu', 'User ID Alexa (Incluiu)'];
-  if (sheet.getMaxColumns() < 7) sheet.insertColumnsAfter(sheet.getMaxColumns(), 7 - sheet.getMaxColumns());
-  if (sheet.getLastRow() > 1 && sheet.getRange(1, 4).getValue() === 'Data Inclusão' && sheet.getRange(1, 5).getValue() === 'Quem Incluiu') {
-    var old = sheet.getRange(2, 1, sheet.getLastRow() - 1, 5).getValues(), migrated = [];
-    for (var i = 0; i < old.length; i++) migrated.push([old[i][0], old[i][1], old[i][2], '', old[i][3], old[i][4], '']);
-    sheet.getRange(2, 1, old.length, 7).clearContent();
-    sheet.getRange(2, 1, migrated.length, 7).setValues(migrated);
-  }
   sheet.getRange(1, 1, 1, 7).setValues([h]).setFontWeight('bold');
 }
+
 function now() { return Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm:ss'); }
 
 function getActiveItemsList(sheet) {
   var data = sheet.getDataRange().getValues(), items = [];
-  for (var i = 1; i < data.length; i++) if (data[i][0] && String(data[i][4]).toUpperCase() === 'ATIVO') items.push(String(data[i][0]).trim());
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][0] && String(data[i][0]).trim() !== '') {
+      items.push(String(data[i][0]).trim());
+    }
+  }
   return items;
 }
 
@@ -144,7 +146,7 @@ function handleList(sheet) {
 
 function handleAdd(sheet, item, user, userId) {
   if (!item) return responseJSON({ success: false, message: 'Nenhum item informado.' });
-  sheet.appendRow([item, now(), user, userId, 'ATIVO', '', '', '']);
+  sheet.appendRow([item, now(), user, userId]);
   return responseJSON({ success: true, item: item });
 }
 
@@ -153,10 +155,19 @@ function handleRemove(itens, historico, item, user, userId) {
   var data = itens.getDataRange().getValues(), target = item.toLowerCase().trim(), date = now();
   for (var i = data.length - 1; i >= 1; i--) {
     var current = data[i][0] ? String(data[i][0]).toLowerCase().trim() : '';
-    if ((current === target || current.indexOf(target) !== -1 || target.indexOf(current) !== -1) && String(data[i][4]).toUpperCase() === 'ATIVO') {
-      historico.appendRow([data[i][0], date, user, userId, data[i][1], data[i][2], data[i][3]]);
-      itens.getRange(i + 1, 5, 1, 4).setValues([['REMOVIDO', date, user, userId]]);
-      return responseJSON({ success: true, item: data[i][0] });
+    if (current === target || current.indexOf(target) !== -1 || target.indexOf(current) !== -1) {
+      var itemOriginal = data[i][0];
+      var dataInclusao = data[i][1] || 'N/I';
+      var quemIncluiu = data[i][2] || 'N/I';
+      var userIdIncluiu = data[i][3] || 'N/I';
+      
+      // 1. Grava no Histórico de Removidos com Governança Completa
+      historico.appendRow([itemOriginal, date, user, userId, dataInclusao, quemIncluiu, userIdIncluiu]);
+      
+      // 2. EXCLUI fisicamente a linha da aba Itens
+      itens.deleteRow(i + 1);
+      
+      return responseJSON({ success: true, item: itemOriginal });
     }
   }
   return responseJSON({ success: false, message: 'Item não encontrado.' });
